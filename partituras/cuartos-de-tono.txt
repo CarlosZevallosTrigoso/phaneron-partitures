@@ -1,0 +1,37 @@
+# Cuartos de tono
+# 24 divisiones iguales de la octava: el grado 1 es un cuarto de tono.
+# Forma aditiva: cada voz entra en su compás y algunas se retiran.
+tempo 112 · semilla 11
+afinación edo 24
+base 41.2                    # mi grave
+compás 7/8*3 5/8
+duración 32
+
+voz bajo
+  tiempo compás 1/16
+  ritmo X.x.x..x.xx..x       # 14 semicorcheas: en el 5/8 el patrón se desfasa
+  grados 0 0 3 0 7 6 0 10
+  distorsión 0.5
+  largo 1.2
+voz bombo
+  ritmo x..x..x
+  entra 5
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(9,14)
+  entra 9 · sale 29
+voz caja
+  ritmo euclides(2) rotar 2
+  entra 9
+voz cuerda
+  tiempo bucle 11/16         # 11 contra 14
+  ritmo x.xx.x.x.x.
+  grados 0 5 13 3 10 17
+  octava 2
+  brillo 0.8
+  entra 13
+voz tom
+  tiempo divide 5            # quintillo sobre cada compás
+  grados 0 7 3 10 1
+  octava 2
+  entra 21 · sale 29

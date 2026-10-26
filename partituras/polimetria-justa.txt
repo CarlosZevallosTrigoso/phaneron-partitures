@@ -1,0 +1,40 @@
+# Polimetría justa
+# Bucles de 5, 7 y 9 semicorcheas sobre un pulso de 4/4.
+# Vuelven a coincidir cada 315 semicorcheas (mcm de 5, 7 y 9).
+# Afinación justa con la séptima armónica 7/4.
+tempo 96 · semilla 5
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 7/4
+base 110
+compás 4/4
+
+voz pulso
+  instrumento bombo
+  ritmo x...
+  vol 0.6
+voz cinco
+  instrumento cuerda
+  tiempo bucle 5/16
+  ritmo x.x..
+  grados 0 2 4
+  octava 1
+  pan -0.5
+voz siete
+  instrumento cuerda
+  tiempo bucle 7/16
+  ritmo x..x.x.
+  grados 4 6 3 1
+  octava 1
+  pan 0.5
+voz nueve
+  instrumento seno
+  tiempo bucle 9/16
+  ritmo x........
+  grados 0 4
+  largo 6
+  vol 0.3
+voz tic
+  instrumento charles
+  tiempo compás 1/16
+  ritmo todos
+  prob 0.6
+  vol 0.2

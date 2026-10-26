@@ -1,0 +1,15 @@
+# Plantilla
+tempo 120
+compás 4/4
+afinación edo 12
+base 110
+
+voz bombo
+  ritmo euclides(4)
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(5,8)
+voz bajo
+  tiempo compás 1/8
+  ritmo euclides(3,8)
+  grados 0 0 7 5

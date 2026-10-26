@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Secuenciador para partituras escritas con criterios matemáticos: métricas cambiantes, polimetría, afinaciones microtonales.">
+<title>ciclos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Capas: barra fija (marca, estado, transporte) → línea de tiempo a todo el ancho → editor | referencia.
+   FORJA clara: un solo tema, blanco, por elección. */
+:root {
+  --papel: #ffffff;
+  --tinta: #111111;
+  --tenue: #62655a;
+  --linea: #d9dbd1;
+  --suave: #f4f5f0;
+  --musgo: #586a45;
+  --musgo-claro: #8fa676;
+  --acero: #4f6b82;
+  --naranja: #b06a36;
+  --error: #9c3f22;
+  --mono: "Fira Code", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r: 2px;
+  --t-0: 11px; --t-1: 13px; --t-2: 14px; --t-3: 18px;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--papel); color: var(--tinta); }
+body { margin: 0; font: var(--t-2)/1.5 var(--mono); }
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--papel);
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--acero); outline-offset: 2px; }
+
+.barra {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--papel); border-bottom: 1px solid var(--tinta);
+}
+.barra-in, .contenido {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 1280px; margin: 0 auto;
+}
+.barra-in { padding-block: 10px; display: grid; gap: 8px; }
+.fila { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.marca { margin: 0; font-size: var(--t-3); font-weight: 600; letter-spacing: 0.02em; }
+.marca button { background: none; border: 0; padding: 0; cursor: pointer; }
+.marca button::after { content: " ◷"; color: var(--musgo); font-weight: 400; }
+.estado { margin: 0; color: var(--tenue); font-size: var(--t-1); font-variant-numeric: tabular-nums; min-width: 0; }
+.transporte { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.aviso { margin: 0; min-height: 1.5em; font-size: var(--t-1); color: var(--acero); }
+.aviso:empty { min-height: 0; }
+
+.boton, .transporte button, .archivo button, .archivo select {
+  border: 1px solid var(--tinta); border-radius: var(--r); background: var(--papel);
+  padding: 6px 10px; min-height: 36px; cursor: pointer; line-height: 1.2;
+}
+.transporte button:hover, .archivo button:hover, .archivo select:hover { background: var(--suave); }
+.transporte .primario { background: var(--musgo); border-color: var(--musgo); color: var(--papel); }
+.transporte .primario:hover { background: #4a5a3a; }
+button:disabled { opacity: 0.4; cursor: default; }
+.desde { display: inline-flex; align-items: center; gap: 4px; color: var(--tenue); font-size: var(--t-1); }
+.desde input {
+  width: 4.5em; border: 1px solid var(--linea); border-radius: var(--r); padding: 6px; min-height: 36px;
+  background: var(--papel); font-variant-numeric: tabular-nums;
+}
+.enlace { background: none; border: 0; padding: 0; color: var(--acero); text-decoration: underline; cursor: pointer; }
+
+.contenido { padding-block: 16px 40px; display: grid; gap: 20px; }
+.linea-tiempo { display: grid; gap: 8px; min-width: 0; }
+#lienzo, #regla { width: 100%; display: block; }
+#lienzo { border: 1px solid var(--linea); border-radius: var(--r); }
+.afinacion { display: grid; gap: 2px; }
+.pie { margin: 0; color: var(--tenue); font-size: var(--t-0); }
+
+.trabajo { display: grid; gap: 20px; min-width: 0; }
+@media (min-width: 960px) { .trabajo { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; } }
+.editor { display: grid; gap: 8px; min-width: 0; }
+.editor-cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.editor-cab label { font-size: var(--t-1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue); }
+.archivo { display: flex; flex-wrap: wrap; gap: 6px; }
+.codigo {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  border: 1px solid var(--tinta); border-radius: var(--r); min-width: 0;
+}
+.codigo pre, .codigo textarea {
+  margin: 0; font: 16px/1.55 var(--mono); padding: 10px 8px; tab-size: 2;
+}
+@media (min-width: 700px) { .codigo pre, .codigo textarea { font-size: var(--t-2); } }
+.codigo pre {
+  color: var(--tenue); text-align: right; overflow: hidden; user-select: none;
+  background: var(--suave); border-right: 1px solid var(--linea); min-width: 3ch;
+}
+.codigo pre .mal { color: var(--papel); background: var(--error); padding: 0 2px; }
+.codigo textarea {
+  border: 0; border-radius: 0 var(--r) var(--r) 0; resize: vertical; min-height: 24em; width: 100%;
+  white-space: pre; overflow: auto; overflow-wrap: normal; background: var(--papel); outline-offset: -2px;
+}
+.mensajes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--t-1); }
+.mensajes .error { color: var(--error); }
+.mensajes .aviso-linea { color: var(--naranja); }
+.mensajes .ok { color: var(--musgo); }
+
+.referencia { border-top: 1px solid var(--tinta); padding-top: 8px; min-width: 0; font-size: var(--t-1); }
+.referencia summary { cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue); padding-block: 4px; }
+.referencia h2 { font-size: var(--t-1); margin: 16px 0 6px; color: var(--musgo); letter-spacing: 0.04em; }
+.referencia dl { margin: 0; display: grid; gap: 6px; }
+.referencia dt { font-weight: 600; overflow-wrap: anywhere; }
+.referencia dd { margin: 0 0 4px 0; color: var(--tenue); max-width: 62ch; }
+.referencia p { margin: 6px 0; color: var(--tenue); max-width: 62ch; }
+.referencia code { color: var(--tinta); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="barra-in">
+    <div class="fila">
+      <h1 class="marca"><button type="button" id="titulo" title="Recargar la página">ciclos</button></h1>
+      <p id="estado" class="estado">cargando…</p>
+    </div>
+    <div class="transporte" role="toolbar" aria-label="Transporte">
+      <button type="button" id="b-tocar" class="primario" aria-pressed="false">▶ Tocar</button>
+      <button type="button" id="b-parar" disabled>■ Parar</button>
+      <button type="button" id="b-evaluar" title="Ctrl o ⌘ + Enter">Evaluar</button>
+      <label class="desde" for="desde">desde el compás <input id="desde" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+    </div>
+    <p id="aviso" class="aviso" role="status" aria-live="polite"></p>
+  </div>
+</header>
+
+<main class="contenido">
+  <section class="linea-tiempo" aria-label="Línea de tiempo">
+    <canvas id="lienzo" role="img" aria-label="Línea de tiempo: una fila por voz, contornos para lo que va a sonar y bloques llenos para lo que ya sonó"></canvas>
+    <div class="afinacion">
+      <canvas id="regla" role="img" aria-label="Regla de afinación: los grados de la escala en cents sobre una octava"></canvas>
+      <p id="afin-txt" class="pie"></p>
+    </div>
+  </section>
+
+  <section class="trabajo">
+    <div class="editor">
+      <div class="editor-cab">
+        <label for="partitura">Partitura</label>
+        <div class="archivo">
+          <select id="ejemplos" aria-label="Cargar un ejemplo"><option value="">Ejemplos…</option></select>
+          <button type="button" id="b-abrir">Abrir .txt</button>
+          <input type="file" id="archivo" accept=".txt,text/plain" hidden>
+          <button type="button" id="b-copiar">Copiar</button>
+          <button type="button" id="b-guardar">Guardar .txt</button>
+          <button type="button" id="b-wav">Exportar WAV</button>
+        </div>
+      </div>
+      <div class="codigo">
+        <pre id="numeros" aria-hidden="true"></pre>
+        <textarea id="partitura" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="mensajes"></textarea>
+      </div>
+      <ul id="mensajes" class="mensajes" aria-live="polite"></ul>
+    </div>
+
+    <details class="referencia" id="referencia">
+      <summary>Referencia del lenguaje</summary>
+      <p>Una instrucción por línea. <code>#</code> abre un comentario; <code>;</code> o <code>·</code> separan instrucciones en una misma línea. Las tildes son opcionales. <code>Ctrl/⌘ + Enter</code> toca o aplica cambios; <code>Ctrl/⌘ + .</code> detiene.</p>
+
+      <h2>Partitura</h2>
+      <dl>
+        <dt>tempo 132</dt><dd>Negras por minuto.</dd>
+        <dt>compás 9/8 8/8 7/8</dt><dd>Secuencia de compases que se repite. <code>7/8*3</code> repite un compás. Por defecto, 4/4.</dd>
+        <dt>duración 24</dt><dd>Compases antes de volver al inicio. Sin duración, la pieza no termina (y se exportan 16 compases).</dd>
+        <dt>afinación edo 24</dt><dd>Divisiones iguales de la octava (por defecto, 12).</dd>
+        <dt>afinación pitagórica 7</dt><dd>n quintas 3/2 apiladas y plegadas a la octava.</dd>
+        <dt>afinación razones 1/1 9/8 5/4 3/2</dt><dd>Escala por razones justas.</dd>
+        <dt>afinación cents 0 150 350 500</dt><dd>Escala en cents.</dd>
+        <dt>base 55</dt><dd>Frecuencia en Hz del grado 0.</dd>
+        <dt>semilla 7</dt><dd>Fija todo lo aleatorio (prob, ruido, cuerda): misma semilla, mismo resultado.</dd>
+      </dl>
+
+      <h2>Voces</h2>
+      <dl>
+        <dt>voz nombre [instrumento]</dt><dd>Abre una voz; las líneas siguientes le pertenecen. Instrumentos: bombo, caja, charles, tom, bajo, cuerda, seno. Si el nombre es un instrumento, no hace falta repetirlo.</dd>
+        <dt>tiempo compás</dt><dd>Un paso por cada unidad del compás (corcheas en 9/8). Es el modo por defecto. <code>tiempo compás 1/16</code> usa semicorcheas.</dd>
+        <dt>tiempo divide 5</dt><dd>Divide cada compás en n partes iguales: tresillos, quintillos, polirritmos.</dd>
+        <dt>tiempo bucle 7/16</dt><dd>Bucle de n pasos de 1/d que ignora los compases: polimetría.</dd>
+        <dt>entra 5 · sale 21</dt><dd>Compás en que la voz empieza y compás en que calla.</dd>
+        <dt>silencio</dt><dd>Apaga la voz sin borrarla.</dd>
+      </dl>
+
+      <h2>Ritmo</h2>
+      <dl>
+        <dt>ritmo euclides(3)</dt><dd>k golpes repartidos en cada compás (o en cada vuelta del bucle).</dd>
+        <dt>ritmo euclides(3,8)</dt><dd>Ciclo propio de n pasos que corre contra la métrica.</dd>
+        <dt>ritmo x..X.x..</dt><dd>Golpes escritos: <code>x</code> golpe, <code>X</code> acento, <code>.</code> silencio, <code>|</code> se ignora. El patrón cicla sobre su propio largo.</dd>
+        <dt>ritmo todos</dt><dd>Un golpe en cada paso (por defecto).</dd>
+        <dt>… rotar 2 · invertir · retrógrado</dt><dd>Transformaciones que se aplican en orden después del patrón.</dd>
+      </dl>
+
+      <h2>Altura</h2>
+      <dl>
+        <dt>grados 0 3 5 7</dt><dd>Cada golpe toma el siguiente grado de la lista. Grados mayores que la escala suben de octava; negativos bajan.</dd>
+        <dt>grados fib mod 7 suma 2</dt><dd>Series: <code>fib</code> (0 1 1 2 3 5…) y <code>primos</code> (2 3 5 7…). Necesitan <code>mod n</code>; <code>suma n</code> transpone.</dd>
+        <dt>octava 1</dt><dd>Desplaza la voz n octavas.</dd>
+      </dl>
+
+      <h2>Sonido</h2>
+      <dl>
+        <dt>vol 0.6 · pan -0.5 · vel 0.8</dt><dd>Volumen (0–1,5), paneo (−1 a 1) y fuerza del golpe; los acentos suben la fuerza un 30 %.</dd>
+        <dt>decae 0.4</dt><dd>Segundos de caída. En la cuerda es el tiempo hasta −60 dB.</dd>
+        <dt>brillo 0.6 · distorsión 0.4</dt><dd>Brillo del filtro o del ruido inicial (0–1) y saturación de la voz (0–1).</dd>
+        <dt>largo 1.5</dt><dd>Duración de la nota en pasos (bajo y seno).</dd>
+        <dt>prob 0.8</dt><dd>Probabilidad de cada golpe, decidida por la semilla.</dd>
+      </dl>
+      <p>Los cambios que aplicas con Evaluar mientras suena entran al comienzo del compás siguiente; los grados de cada voz vuelven a empezar desde ahí.</p>
+    </details>
+  </section>
+</main>
+<script>
+'use strict';
+/* ==========================================================================
+   ciclos · motor (lógica pura, sin DOM ni audio)
+   Lenguaje de partituras → línea de tiempo → eventos.
+   ========================================================================== */
+
+/* ---------- instrumentos: valores por defecto ---------- */
+const INSTRUMENTOS = {
+  bombo:   { vol: 0.9,  decae: 0.45, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: false },
+  caja:    { vol: 0.55, decae: 0.18, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: false },
+  charles: { vol: 0.3,  decae: 0.05, brillo: 0.7,  distorsion: 0,    largo: 1,   melodico: false },
+  tom:     { vol: 0.6,  decae: 0.35, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: true  },
+  bajo:    { vol: 0.35, decae: 0.08, brillo: 0.35, distorsion: 0.35, largo: 0.9, melodico: true  },
+  cuerda:  { vol: 0.6,  decae: 2.5,  brillo: 0.6,  distorsion: 0,    largo: 1,   melodico: true  },
+  seno:    { vol: 0.45, decae: 0.08, brillo: 0.5,  distorsion: 0,    largo: 0.9, melodico: true  },
+};
+const ALIAS_INSTR = {
+  hihat: 'charles', hat: 'charles', platillo: 'charles', kick: 'bombo', snare: 'caja',
+  bass: 'bajo', guitarra: 'cuerda', pluck: 'cuerda', sine: 'seno',
+};
+const PARAMS_NUM = {
+  vol: [0, 1.5], pan: [-1, 1], decae: [0.01, 10], brillo: [0, 1], distorsion: [0, 1],
+  largo: [0.05, 16], prob: [0, 1], vel: [0, 1],
+};
+
+/* ---------- utilidades ---------- */
+function normalizar(s) {
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+function mod(a, n) { return ((a % n) + n) % n; }
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hash32(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+/** Número pseudoaleatorio determinista en [0,1) a partir de claves. */
+function azar(...partes) { return mulberry32(hash32(partes.join('|')))(); }
+
+/** Entero, decimal (punto o coma) o fracción a/b. NaN si no es número. */
+function numero(tok) {
+  if (tok == null) return NaN;
+  let m;
+  if ((m = /^(-?\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(tok))) return Number(m[1]) / Number(m[2]);
+  if (/^-?\d+(?:[.,]\d+)?$/.test(tok)) return Number(tok.replace(',', '.'));
+  return NaN;
+}
+function entero(tok) { return /^-?\d+$/.test(tok || '') ? Number(tok) : NaN; }
+
+/* ---------- ritmo ---------- */
+/** Algoritmo de Bjorklund: k golpes repartidos en n pasos (1 = golpe). */
+function bjorklund(k, n) {
+  if (n <= 0) return [];
+  if (k <= 0) return new Array(n).fill(0);
+  if (k >= n) return new Array(n).fill(1);
+  let a = Array.from({ length: k }, () => [1]);
+  let b = Array.from({ length: n - k }, () => [0]);
+  do {   // al menos una pasada: así E(3,4) = x.xx y E(2,3) = x.x, como en Toussaint
+    const m = Math.min(a.length, b.length);
+    const na = [];
+    for (let i = 0; i < m; i++) na.push(a[i].concat(b[i]));
+    const resto = a.length > m ? a.slice(m) : b.slice(m);
+    a = na; b = resto;
+  } while (b.length > 1);
+  return a.concat(b).flat();
+}
+/** Aplica transformaciones a un patrón (0 silencio, 1 golpe, 2 acento). */
+function transformar(pat, transf) {
+  let p = pat.slice();
+  for (const t of transf) {
+    const n = p.length;
+    if (!n) break;
+    if (t.tipo === 'rotar') { const r = mod(t.n, n); const q = p.slice(); p = q.map((_, i) => q[mod(i - r, n)]); }
+    else if (t.tipo === 'invertir') p = p.map(v => (v ? 0 : 1));
+    else if (t.tipo === 'retrogrado') p = p.slice().reverse();
+  }
+  return p;
+}
+function parsearGolpes(s) {
+  const out = [];
+  for (const ch of s) {
+    if (ch === 'x') out.push(1);
+    else if (ch === 'X') out.push(2);
+    else if (ch === '.' || ch === '-' || ch === '_') out.push(0);
+    else if (ch === '|') continue;
+    else return null;
+  }
+  return out.length ? out : null;
+}
+
+/* ---------- series numéricas (se amplían en la fase 2) ---------- */
+const _fibCache = new Map();
+const _primos = [2];
+const SERIES = {
+  /** Fibonacci 0 1 1 2 3 5 8…, calculada ya reducida módulo m. */
+  fib(i, m) {
+    let a = _fibCache.get(m);
+    if (!a) { a = [0 % m, 1 % m]; _fibCache.set(m, a); }
+    while (a.length <= i) a.push((a[a.length - 1] + a[a.length - 2]) % m);
+    return a[i];
+  },
+  /** Primos 2 3 5 7 11… */
+  primos(i) {
+    while (_primos.length <= i) {
+      let c = _primos[_primos.length - 1] + 1;
+      for (;; c++) {
+        let es = true;
+        for (const q of _primos) { if (q * q > c) break; if (c % q === 0) { es = false; break; } }
+        if (es) break;
+      }
+      _primos.push(c);
+    }
+    return _primos[i];
+  },
+};
+function valorGrado(g, h) {
+  let v = g.tipo === 'lista' ? g.valores[h % g.valores.length] : SERIES[g.serie](h, g.mod);
+  if (g.mod) v = mod(v, g.mod);
+  return v + g.suma;
+}
+
+/* ---------- afinación ---------- */
+function plegarOctava(r) { while (r >= 2 - 1e-12) r /= 2; while (r < 1 - 1e-12) r *= 2; return r; }
+function ordenarUnicos(rs) {
+  const s = rs.map(plegarOctava).sort((a, b) => a - b);
+  return s.filter((r, i) => i === 0 || Math.abs(r - s[i - 1]) > 1e-9);
+}
+function ratiosAfinacion(af) {
+  if (af.tipo === 'edo') return Array.from({ length: af.n }, (_, i) => Math.pow(2, i / af.n));
+  if (af.tipo === 'pitagorica') return ordenarUnicos(Array.from({ length: af.n }, (_, k) => Math.pow(1.5, k)));
+  if (af.tipo === 'razones') return ordenarUnicos(af.valores);
+  if (af.tipo === 'cents') return ordenarUnicos(af.valores.map(c => Math.pow(2, c / 1200)));
+  throw new Error('afinación desconocida');
+}
+/** Frecuencia de un grado; los grados fuera de 0..n-1 cambian de octava. */
+function frecuencia(ratios, base, grado) {
+  const n = ratios.length;
+  const o = Math.floor(grado / n);
+  return base * Math.pow(2, o) * ratios[grado - o * n];
+}
+
+/* ---------- parser ---------- */
+const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio',
+  ...Object.keys(PARAMS_NUM)]);
+
+function parsearRitmo(args, err) {
+  const r = { gen: null, k: 0, n: null, pat: null, transf: [] };
+  const t0 = args[0];
+  if (!t0) { err('«ritmo» necesita un patrón: euclides(k), golpes x..x, todos'); return null; }
+  const tn = normalizar(t0);
+  let i, m;
+  if ((m = /^(?:euclides|euc)\((\d+)(?:,(\d+))?\)$/.exec(tn))) {
+    r.gen = 'euclides'; r.k = Number(m[1]); r.n = m[2] != null ? Number(m[2]) : null; i = 1;
+    if (r.n != null && (r.n < 1 || r.n > 128)) { err('euclides(k,n): n debe estar entre 1 y 128'); return null; }
+    if (r.n != null && r.k > r.n) { err('euclides(k,n): k no puede ser mayor que n'); return null; }
+  } else if (tn === 'todos') { r.gen = 'todos'; i = 1; }
+  else if (tn === 'golpes') {
+    r.gen = 'golpes'; r.pat = parsearGolpes(args[1] || ''); i = 2;
+    if (!r.pat) { err('«golpes» espera una cadena con x (golpe), X (acento) y . (silencio)'); return null; }
+  } else if (/^[xX.\-_|]+$/.test(t0)) {
+    r.gen = 'golpes'; r.pat = parsearGolpes(t0); i = 1;
+    if (!r.pat) { err('patrón de golpes vacío'); return null; }
+  } else { err(`no reconozco el patrón «${t0}»; usa euclides(k), euclides(k,n), golpes x..x o todos`); return null; }
+  while (i < args.length) {
+    const t = normalizar(args[i]);
+    if (t === 'rotar') {
+      const n = entero(args[i + 1]);
+      if (Number.isNaN(n)) { err('«rotar» necesita un entero'); return null; }
+      r.transf.push({ tipo: 'rotar', n }); i += 2;
+    } else if (t === 'invertir' || t === 'retrogrado') { r.transf.push({ tipo: t }); i += 1; }
+    else { err(`no reconozco la transformación «${args[i]}» (rotar n, invertir, retrógrado)`); return null; }
+  }
+  return r;
+}
+
+function parsearGrados(args, err) {
+  const toks = args.flatMap(t => t.split(',')).filter(Boolean);
+  const g = { tipo: null, valores: null, serie: null, mod: null, suma: 0 };
+  let i = 0;
+  const t0 = normalizar(toks[0] || '');
+  if (Object.prototype.hasOwnProperty.call(SERIES, t0)) { g.tipo = 'serie'; g.serie = t0; i = 1; }
+  else {
+    const vals = [];
+    while (i < toks.length && /^-?\d+$/.test(toks[i])) vals.push(Number(toks[i++]));
+    if (!vals.length) { err(`«grados» espera enteros o una serie (${Object.keys(SERIES).join(', ')})`); return null; }
+    g.tipo = 'lista'; g.valores = vals;
+  }
+  while (i < toks.length) {
+    const k = normalizar(toks[i]);
+    const v = entero(toks[i + 1]);
+    if (k === 'mod') {
+      if (!(v >= 1)) { err('«mod» necesita un entero ≥ 1'); return null; }
+      g.mod = v; i += 2;
+    } else if (k === 'suma') {
+      if (Number.isNaN(v)) { err('«suma» necesita un entero'); return null; }
+      g.suma = v; i += 2;
+    } else { err(`no reconozco «${toks[i]}» en grados (usa mod n, suma n)`); return null; }
+  }
+  if (g.tipo === 'serie' && !g.mod) { err(`la serie «${g.serie}» crece sin límite: añade «mod n»`); return null; }
+  return g;
+}
+
+/**
+ * Convierte el texto de una partitura en un objeto.
+ * Devuelve { partitura|null, errores: [{linea,msg}], avisos: [{linea,msg}] }.
+ */
+function parsear(texto) {
+  const errores = [], avisos = [];
+  const p = {
+    tempo: 120, semilla: 1, base: 110,
+    afinacion: { tipo: 'edo', n: 12 }, compases: [{ num: 4, den: 4 }],
+    duracion: null, voces: [], lineaCompas: 0,
+  };
+  let voz = null;
+  const lineas = String(texto).split(/\r?\n/);
+
+  lineas.forEach((crudo, idx) => {
+    const ln = idx + 1;
+    let s = crudo.replace(/#.*/, '');
+    s = s.replace(/\(([^)]*)\)/g, (_, dentro) => '(' + dentro.replace(/\s+/g, '') + ')');
+    for (const frase of s.split(/[;·]/)) {
+      const toks = frase.trim().split(/\s+/).filter(Boolean);
+      if (!toks.length) continue;
+      const clave = normalizar(toks[0]);
+      const args = toks.slice(1);
+      const err = msg => errores.push({ linea: ln, msg });
+
+      if (clave === 'tempo') {
+        const v = numero(args[0]);
+        if (!(v >= 20 && v <= 400)) err('«tempo» debe estar entre 20 y 400 (negras por minuto)');
+        else p.tempo = v;
+      } else if (clave === 'semilla') {
+        const v = entero(args[0]);
+        if (Number.isNaN(v)) err('«semilla» necesita un entero'); else p.semilla = v;
+      } else if (clave === 'base') {
+        const v = numero(args[0]);
+        if (!(v >= 16 && v <= 4000)) err('«base» es la frecuencia del grado 0 en Hz (16–4000)');
+        else p.base = v;
+      } else if (clave === 'afinacion') {
+        const tipo = normalizar(args[0] || '');
+        if (tipo === 'edo' || tipo === 'pitagorica') {
+          const n = args[1] == null ? 12 : entero(args[1]);
+          const max = tipo === 'edo' ? 96 : 53;
+          if (!(n >= 1 && n <= max)) err(`«afinación ${tipo}» espera un entero entre 1 y ${max}`);
+          else p.afinacion = { tipo, n };
+        } else if (tipo === 'razones' || tipo === 'cents') {
+          const vals = args.slice(1).flatMap(t => t.split(',')).filter(Boolean).map(numero);
+          if (!vals.length || vals.some(v => Number.isNaN(v) || (tipo === 'razones' && v <= 0))) {
+            err(`«afinación ${tipo}» espera una lista de ${tipo === 'razones' ? 'razones como 1/1 9/8 3/2' : 'valores en cents'}`);
+          } else p.afinacion = { tipo, valores: vals };
+        } else err('afinación: usa edo n, pitagórica n, razones a/b… o cents c…');
+      } else if (clave === 'compas') {
+        const cs = [];
+        let ok = args.length > 0;
+        for (const a of args) {
+          const m = /^(\d+)\/(\d+)(?:\*(\d+))?$/.exec(a);
+          if (!m) { ok = false; break; }
+          const num = Number(m[1]), den = Number(m[2]), rep = m[3] ? Number(m[3]) : 1;
+          if (num < 1 || num > 64 || den < 1 || den > 64 || rep < 1 || rep > 64) { ok = false; break; }
+          for (let r = 0; r < rep; r++) cs.push({ num, den });
+        }
+        if (!ok || cs.length > 256) err('«compás» espera una lista como 9/8 8/8 7/8 (y 7/8*3 para repetir)');
+        else { p.compases = cs; p.lineaCompas = ln; }
+      } else if (clave === 'duracion') {
+        const v = entero(args[0]);
+        if (!(v >= 1)) err('«duración» es un número de compases ≥ 1'); else p.duracion = v;
+      } else if (clave === 'voz') {
+        const nombre = normalizar(args[0] || '');
+        if (!nombre) { err('«voz» necesita un nombre'); voz = null; continue; }
+        if (p.voces.some(v => v.nombre === nombre)) { err(`ya existe una voz llamada «${nombre}»`); voz = null; continue; }
+        voz = {
+          nombre, linea: ln, instr: null, lineaInstr: ln,
+          tiempo: { modo: 'compas', u: null }, lineaTiempo: ln,
+          ritmo: { gen: 'todos', transf: [] }, grados: null, octava: 0,
+          entra: null, sale: null, silencio: false, params: {},
+        };
+        p.voces.push(voz);
+        if (args[1]) {
+          const ins = normalizar(args[1]);
+          const r = ALIAS_INSTR[ins] || ins;
+          if (INSTRUMENTOS[r]) voz.instr = r; else err(`no existe el instrumento «${args[1]}»`);
+        }
+      } else if (CLAVES_VOZ.has(clave)) {
+        if (!voz) { err(`«${toks[0]}» va dentro de una voz: escribe antes «voz nombre»`); continue; }
+        if (clave === 'instrumento') {
+          const ins = normalizar(args[0] || '');
+          const r = ALIAS_INSTR[ins] || ins;
+          if (INSTRUMENTOS[r]) { voz.instr = r; voz.lineaInstr = ln; }
+          else err(`no existe el instrumento «${args[0] || ''}» (${Object.keys(INSTRUMENTOS).join(', ')})`);
+        } else if (clave === 'tiempo') {
+          const modo = normalizar(args[0] || '');
+          voz.lineaTiempo = ln;
+          if (modo === 'compas') {
+            if (args[1] == null) voz.tiempo = { modo: 'compas', u: null };
+            else {
+              const m = /^1\/(\d+)$/.exec(args[1]);
+              if (!m || Number(m[1]) < 1 || Number(m[1]) > 64) err('«tiempo compás» acepta una unidad como 1/16');
+              else voz.tiempo = { modo: 'compas', u: Number(m[1]) };
+            }
+          } else if (modo === 'divide') {
+            const n = entero(args[1]);
+            if (!(n >= 1 && n <= 128)) err('«tiempo divide n»: n entre 1 y 128');
+            else voz.tiempo = { modo: 'divide', n };
+          } else if (modo === 'bucle') {
+            const m = /^(\d+)\/(\d+)$/.exec(args[1] || '');
+            if (!m || Number(m[1]) < 1 || Number(m[1]) > 256 || Number(m[2]) < 1 || Number(m[2]) > 64) {
+              err('«tiempo bucle n/d»: n pasos de 1/d de redonda (p. ej. bucle 7/16)');
+            } else voz.tiempo = { modo: 'bucle', n: Number(m[1]), d: Number(m[2]) };
+          } else err('«tiempo» acepta: compás [1/u], divide n, bucle n/d');
+        } else if (clave === 'ritmo') {
+          const r = parsearRitmo(args, err);
+          if (r) voz.ritmo = r;
+        } else if (clave === 'grados') {
+          const g = parsearGrados(args, err);
+          if (g) voz.grados = g;
+        } else if (clave === 'octava') {
+          const v = entero(args[0]);
+          if (!(v >= -6 && v <= 6)) err('«octava» es un entero entre -6 y 6'); else voz.octava = v;
+        } else if (clave === 'entra' || clave === 'sale') {
+          const v = entero(args[0]);
+          if (!(v >= 1)) err(`«${clave}» es un número de compás ≥ 1`); else voz[clave] = v;
+        } else if (clave === 'silencio') {
+          voz.silencio = true;
+        } else {
+          const [lo, hi] = PARAMS_NUM[clave];
+          const v = numero(args[0]);
+          if (!(v >= lo && v <= hi)) err(`«${clave}» debe estar entre ${lo} y ${hi}`);
+          else voz.params[clave] = v;
+        }
+      } else {
+        err(`no reconozco «${toks[0]}»`);
+      }
+    }
+  });
+
+  // validación posterior y valores por defecto
+  for (const v of p.voces) {
+    if (!v.instr) {
+      const r = ALIAS_INSTR[v.nombre] || v.nombre;
+      if (INSTRUMENTOS[r]) v.instr = r;
+      else { errores.push({ linea: v.linea, msg: `la voz «${v.nombre}» no tiene instrumento` }); continue; }
+    }
+    const def = INSTRUMENTOS[v.instr];
+    v.vol = v.params.vol ?? def.vol;
+    v.pan = v.params.pan ?? 0;
+    v.decae = v.params.decae ?? def.decae;
+    v.brillo = v.params.brillo ?? def.brillo;
+    v.distorsion = v.params.distorsion ?? def.distorsion;
+    v.largo = v.params.largo ?? def.largo;
+    v.prob = v.params.prob ?? 1;
+    v.vel = v.params.vel ?? 0.8;
+    v.melodico = def.melodico;
+    if (v.grados && !def.melodico) avisos.push({ linea: v.linea, msg: `«${v.instr}» no tiene altura: se ignoran sus grados` });
+    if (v.entra && v.sale && v.sale <= v.entra) errores.push({ linea: v.linea, msg: '«sale» debe ser mayor que «entra»' });
+    if (v.tiempo.modo === 'compas' && v.tiempo.u) {
+      for (const c of p.compases) {
+        if ((c.num * v.tiempo.u) % c.den !== 0) {
+          errores.push({ linea: v.lineaTiempo, msg: `un compás ${c.num}/${c.den} no se divide en pasos de 1/${v.tiempo.u}` });
+          break;
+        }
+      }
+    }
+  }
+  if (!p.voces.length && !errores.length) avisos.push({ linea: 0, msg: 'la partitura no tiene voces' });
+  p.ratios = ratiosAfinacion(p.afinacion);
+  return { partitura: errores.length ? null : p, errores, avisos };
+}
+
+/* ---------- línea de tiempo ---------- */
+/** Mapa compás ↔ segundos. Todo se calcula desde enteros: no hay deriva. */
+function crearLinea(p) {
+  const W = 240 / p.tempo;                 // segundos por redonda (tempo en negras)
+  const cs = p.compases, P = cs.length;
+  const lens = cs.map(c => (c.num / c.den) * W);
+  const pref = [0];
+  for (const l of lens) pref.push(pref[pref.length - 1] + l);
+  const TP = pref[P];
+  const inicio = c => { const k = Math.floor(c / P); return k * TP + pref[c - k * P]; };
+  const linea = {
+    W, P, TP,
+    inicio,
+    largo: c => lens[mod(c, P)],
+    compas: c => cs[mod(c, P)],
+    compasEn(t) {
+      const k = Math.floor((t + 1e-9) / TP);
+      const r = t - k * TP;
+      let j = 0;
+      while (j < P - 1 && pref[j + 1] <= r + 1e-9) j++;
+      return k * P + j;
+    },
+    fin: p.duracion ? inicio(p.duracion) : Infinity,
+  };
+  return linea;
+}
+
+/* ---------- cursor por voz ---------- */
+/**
+ * Recorre los pasos de una voz desde el compás c0 (base 0).
+ * avanzarHasta(tFin) devuelve los golpes con t < tFin y deja el cursor ahí.
+ * Los grados se cuentan por golpe desde la creación del cursor.
+ */
+function crearCursor(p, linea, vi, c0) {
+  const voz = p.voces[vi];
+  const T = voz.tiempo;
+  const P = linea.P;
+  const pasosCompas = j => {
+    const c = p.compases[j];
+    if (T.modo === 'divide') return T.n;
+    if (T.u) return (c.num * T.u) / c.den;
+    return c.num;
+  };
+  const prefPasos = [0];
+  for (let j = 0; j < P; j++) prefPasos.push(prefPasos[j] + pasosCompas(j));
+  const SP = prefPasos[P];
+  const pasosAntes = c => { const k = Math.floor(c / P); return k * SP + prefPasos[c - k * P]; };
+
+  const pasoBucle = T.modo === 'bucle' ? linea.W / T.d : 0;
+  const st = {
+    c: c0, p: 0,
+    i: T.modo === 'bucle' ? Math.ceil(linea.inicio(c0) / pasoBucle - 1e-9) : 0,
+    h: 0,
+  };
+  const cachePatron = new Map();
+  const patron = n => {
+    let pt = cachePatron.get(n);
+    if (!pt) {
+      const r = voz.ritmo;
+      pt = transformar(r.gen === 'golpes' ? r.pat : bjorklund(r.k, n), r.transf);
+      cachePatron.set(n, pt);
+    }
+    return pt;
+  };
+  const r = voz.ritmo;
+  const golpe = (g, nMarco, pMarco) => {
+    if (r.gen === 'todos') return 1;
+    if (r.gen === 'golpes') { const pt = patron(r.pat.length); return pt[mod(g, pt.length)]; }
+    if (r.n != null) return patron(r.n)[mod(g, r.n)];
+    return patron(nMarco)[pMarco];
+  };
+  const activa = c => (!voz.entra || c >= voz.entra - 1) && (!voz.sale || c < voz.sale - 1);
+
+  function avanzarHasta(tFin) {
+    const out = [];
+    for (let guarda = 0; guarda < 200000; guarda++) {
+      let t, dur, c, g, nMarco, pMarco;
+      if (T.modo === 'bucle') {
+        t = st.i * pasoBucle; dur = pasoBucle;
+        if (t >= tFin) break;
+        c = linea.compasEn(t); g = st.i; nMarco = T.n; pMarco = mod(st.i, T.n);
+        st.i++;
+      } else {
+        const n = pasosCompas(mod(st.c, P));
+        dur = linea.largo(st.c) / n;
+        t = linea.inicio(st.c) + st.p * dur;
+        if (t >= tFin) break;
+        c = st.c; g = pasosAntes(st.c) + st.p; nMarco = n; pMarco = st.p;
+        st.p++;
+        if (st.p >= n) { st.p = 0; st.c++; }
+      }
+      if (voz.silencio || !activa(c)) continue;
+      let v = golpe(g, nMarco, pMarco);
+      if (!v) continue;
+      if (voz.prob < 1 && azar(p.semilla, voz.nombre, g) >= voz.prob) continue;
+      let grado = null, freq = null;
+      if (voz.melodico) {
+        grado = (voz.grados ? valorGrado(voz.grados, st.h) : 0);
+        freq = frecuencia(p.ratios, p.base, grado + voz.octava * p.ratios.length);
+      }
+      st.h++;
+      out.push({
+        t, dur, c, g, voz: vi, acento: v === 2,
+        vel: v === 2 ? Math.min(1, voz.vel * 1.3) : voz.vel,
+        grado, freq,
+      });
+    }
+    return out;
+  }
+  return { avanzarHasta, estado: st };
+}
+
+/** Todos los golpes entre los compases cIni (incl.) y cFin (excl.), ordenados. */
+function eventosEntre(p, linea, cIni, cFin) {
+  const tFin = Math.min(linea.inicio(cFin), linea.fin);
+  const evs = [];
+  p.voces.forEach((_, vi) => { evs.push(...crearCursor(p, linea, vi, cIni).avanzarHasta(tFin)); });
+  return evs.sort((a, b) => a.t - b.t || a.voz - b.voz);
+}
+
+/* ---------- síntesis pura: cuerda pulsada (Karplus-Strong) ---------- */
+/**
+ * Devuelve muestras de una cuerda pulsada. El retardo fraccionario
+ * (interpolación lineal) mantiene la afinación exacta en microtonos.
+ */
+function cuerdaKS(sr, freq, t60, brillo, semilla) {
+  const D = sr / freq;           // retardo total del lazo, en muestras
+  const P = D - 0.5;             // el filtro promediador aporta media muestra
+  const len = Math.ceil((t60 + 0.05) * sr);
+  const y = new Float32Array(len);
+  const rnd = mulberry32(semilla >>> 0);
+  const nEx = Math.min(len, Math.ceil(P + 1));
+  const a = 0.08 + 0.92 * brillo;  // filtro de un polo sobre el ruido inicial
+  let lp = 0, suma = 0, pico = 0;
+  for (let k = 0; k < nEx; k++) { lp += a * (rnd() * 2 - 1 - lp); y[k] = lp; suma += lp; }
+  const media = suma / nEx;
+  for (let k = 0; k < nEx; k++) { y[k] -= media; pico = Math.max(pico, Math.abs(y[k])); }
+  if (pico > 0) for (let k = 0; k < nEx; k++) y[k] *= 0.9 / pico;
+  const gan = Math.pow(0.001, 1 / (freq * t60));   // ganancia por período → T60
+  const leer = x => { const i = Math.floor(x), f = x - i; return y[i] * (1 - f) + y[i + 1] * f; };
+  for (let n = nEx; n < len; n++) y[n] = gan * 0.5 * (leer(n - P) + leer(n - P - 1));
+  const fade = Math.min(len, Math.round(0.03 * sr));
+  for (let k = 0; k < fade; k++) y[len - 1 - k] *= k / fade;
+  return y;
+}
+
+/* ---------- WAV ---------- */
+function codificarWAV(canales, sr) {
+  const nc = canales.length, len = canales[0].length;
+  const bytes = 44 + len * nc * 2;
+  const buf = new ArrayBuffer(bytes);
+  const dv = new DataView(buf);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); dv.setUint32(4, bytes - 8, true); str(8, 'WAVE');
+  str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nc, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * nc * 2, true); dv.setUint16(32, nc * 2, true); dv.setUint16(34, 16, true);
+  str(36, 'data'); dv.setUint32(40, len * nc * 2, true);
+  let o = 44;
+  for (let i = 0; i < len; i++) {
+    for (let ch = 0; ch < nc; ch++) {
+      const s = Math.max(-1, Math.min(1, canales[ch][i]));
+      dv.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2;
+    }
+  }
+  return buf;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    INSTRUMENTOS, SERIES, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
+    parsearGolpes, valorGrado, ratiosAfinacion, frecuencia, parsear, crearLinea, crearCursor,
+    eventosEntre, cuerdaKS, codificarWAV,
+  };
+}
+</script>
+<script>
+'use strict';
+/* ==========================================================================
+   ciclos · audio (Web Audio API). El mismo código sirve para tocar en vivo
+   y para exportar con OfflineAudioContext: lo que se oye es lo que se exporta.
+   Usa del motor: mulberry32, azar, cuerdaKS, crearLinea, eventosEntre.
+   ========================================================================== */
+
+function crearRecursos(ctx, semilla) {
+  const sr = ctx.sampleRate;
+  const ruido = ctx.createBuffer(1, sr, sr);
+  const d = ruido.getChannelData(0);
+  const rnd = mulberry32((semilla ^ 0x9e3779b9) >>> 0);
+  for (let i = 0; i < d.length; i++) d[i] = rnd() * 2 - 1;
+  return { ruido, ks: new Map(), semilla, fueraDeRango: 0 };
+}
+
+function curvaDistorsion(k) {
+  const n = 2048, c = new Float32Array(n), a = k * 60;
+  for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = ((1 + a) * x) / (1 + a * Math.abs(x)); }
+  return c;
+}
+
+/** Lineal hasta 0.7 y luego rodilla suave: el pico nunca pasa de ~0.92. */
+function curvaLimitador() {
+  const n = 4096, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1, ax = Math.abs(x);
+    c[i] = ax <= 0.7 ? x : Math.sign(x) * (0.7 + 0.28 * Math.tanh((ax - 0.7) / 0.28));
+  }
+  return c;
+}
+
+/** Mezcla: ganancia → compresor (aplica ganancia de compensación propia) → limitador suave. */
+function crearMezcla(ctx, destino) {
+  const entrada = ctx.createGain();
+  entrada.gain.value = 0.42;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 3;
+  comp.attack.value = 0.005; comp.release.value = 0.2;
+  const lim = ctx.createWaveShaper();
+  lim.curve = curvaLimitador();
+  lim.oversample = '2x';
+  entrada.connect(comp);
+  comp.connect(lim);
+  lim.connect(destino);
+  return { entrada, comp, lim };
+}
+
+/** Cadena por voz: entrada → [distorsión] → volumen → [paneo] → mezcla. */
+function crearBus(ctx, mezcla, voz) {
+  const entrada = ctx.createGain();
+  let nodo = entrada;
+  if (voz.distorsion > 0) {
+    const ws = ctx.createWaveShaper();
+    ws.curve = curvaDistorsion(voz.distorsion);
+    ws.oversample = '4x';
+    const comp = ctx.createGain();
+    comp.gain.value = 1 / (1 + voz.distorsion * 1.5);
+    nodo.connect(ws); ws.connect(comp); nodo = comp;
+  }
+  const vol = ctx.createGain();
+  vol.gain.value = voz.vol;
+  nodo.connect(vol);
+  let salida = vol;
+  if (voz.pan && typeof ctx.createStereoPanner === 'function') {
+    const pn = ctx.createStereoPanner();
+    pn.pan.value = voz.pan;
+    vol.connect(pn); salida = pn;
+  }
+  salida.connect(mezcla.entrada);
+  return entrada;
+}
+
+const SILENCIO = 0.0001;
+function envolvente(g, t, pico, ataque, caida) {
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(pico, t + ataque);
+  g.gain.exponentialRampToValueAtTime(SILENCIO, t + ataque + caida);
+}
+/** Nota sostenida: ataque, sostén hasta t+largo, caída. */
+function envolventeNota(g, t, pico, ataque, largo, caida) {
+  const fin = t + Math.max(largo, ataque + 0.005);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(pico, t + ataque);
+  g.gain.setValueAtTime(pico, fin);
+  g.gain.exponentialRampToValueAtTime(SILENCIO, fin + caida);
+  return fin + caida;
+}
+function fuenteRuido(ctx, rec, ev, t, dur) {
+  const s = ctx.createBufferSource();
+  s.buffer = rec.ruido;
+  const offset = azar(rec.semilla, 'ruido', ev.voz, ev.g) * Math.max(0, rec.ruido.duration - dur - 0.01);
+  s.start(t, offset, dur);
+  return s;
+}
+
+const SINTES = {
+  bombo(ctx, bus, ev, voz, rec, t) {
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(140 + 140 * voz.brillo, t);
+    o.frequency.exponentialRampToValueAtTime(44, t + 0.1);
+    const g = ctx.createGain();
+    envolvente(g, t, ev.vel, 0.002, voz.decae);
+    o.connect(g); g.connect(bus);
+    o.start(t); o.stop(t + voz.decae + 0.05);
+  },
+  caja(ctx, bus, ev, voz, rec, t) {
+    const n = fuenteRuido(ctx, rec, ev, t, voz.decae + 0.05);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1500 + 2500 * voz.brillo; bp.Q.value = 0.8;
+    const gn = ctx.createGain();
+    envolvente(gn, t, ev.vel * 1.4, 0.001, voz.decae);
+    n.connect(bp); bp.connect(gn); gn.connect(bus);
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(230, t);
+    o.frequency.exponentialRampToValueAtTime(170, t + 0.05);
+    const go = ctx.createGain();
+    envolvente(go, t, ev.vel * 0.7, 0.001, 0.07);
+    o.connect(go); go.connect(bus);
+    o.start(t); o.stop(t + 0.12);
+  },
+  charles(ctx, bus, ev, voz, rec, t) {
+    const dur = voz.decae * (ev.acento ? 2.5 : 1);
+    const n = fuenteRuido(ctx, rec, ev, t, dur + 0.03);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 5000 + 4000 * voz.brillo;
+    const g = ctx.createGain();
+    envolvente(g, t, ev.vel, 0.001, dur);
+    n.connect(hp); hp.connect(g); g.connect(bus);
+  },
+  tom(ctx, bus, ev, voz, rec, t) {
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(ev.freq * 1.6, t);
+    o.frequency.exponentialRampToValueAtTime(ev.freq, t + 0.06);
+    const g = ctx.createGain();
+    envolvente(g, t, ev.vel, 0.002, voz.decae);
+    o.connect(g); g.connect(bus);
+    o.start(t); o.stop(t + voz.decae + 0.05);
+  },
+  bajo(ctx, bus, ev, voz, rec, t) {
+    const largo = ev.dur * voz.largo;
+    const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = ev.freq;
+    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = ev.freq;   // sin desafinar: los microtonos tienen que oírse limpios
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 4;
+    const tope = Math.min(ctx.sampleRate * 0.45, 120 * Math.pow(2, voz.brillo * 7));
+    lp.frequency.setValueAtTime(tope, t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(60, tope * 0.25), t + Math.max(0.06, largo));
+    const g = ctx.createGain();
+    const fin = envolventeNota(g, t, ev.vel * 0.5, 0.004, largo, voz.decae);
+    o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(bus);
+    o1.start(t); o2.start(t); o1.stop(fin + 0.02); o2.stop(fin + 0.02);
+  },
+  cuerda(ctx, bus, ev, voz, rec, t) {
+    const variante = Math.floor(azar(rec.semilla, 'ks', ev.voz, ev.g) * 3);
+    const clave = `${ev.freq.toFixed(3)}|${voz.decae}|${voz.brillo}|${variante}`;
+    let buf = rec.ks.get(clave);
+    if (!buf) {
+      const y = cuerdaKS(ctx.sampleRate, ev.freq, voz.decae, voz.brillo, rec.semilla * 7919 + variante + 1);
+      buf = ctx.createBuffer(1, y.length, ctx.sampleRate);
+      buf.getChannelData(0).set(y);
+      rec.ks.set(clave, buf);
+    }
+    const s = ctx.createBufferSource();
+    s.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = ev.vel;
+    s.connect(g); g.connect(bus);
+    s.start(t);
+  },
+  seno(ctx, bus, ev, voz, rec, t) {
+    const o = ctx.createOscillator();
+    o.type = 'sine'; o.frequency.value = ev.freq;
+    const g = ctx.createGain();
+    const fin = envolventeNota(g, t, ev.vel * 0.6, 0.01, ev.dur * voz.largo, voz.decae);
+    o.connect(g); g.connect(bus);
+    o.start(t); o.stop(fin + 0.02);
+  },
+};
+
+/** Programa un golpe en el contexto. Devuelve false si quedó fuera del rango audible. */
+function programarEvento(ctx, p, buses, rec, ev, tAudio) {
+  const voz = p.voces[ev.voz];
+  if (ev.freq != null && (ev.freq < 16 || ev.freq > Math.min(12000, ctx.sampleRate * 0.45))) {
+    rec.fueraDeRango++;
+    return false;
+  }
+  SINTES[voz.instr](ctx, buses[ev.voz], ev, voz, rec, tAudio);
+  return true;
+}
+
+/** Renderiza la partitura fuera de tiempo real. Devuelve un AudioBuffer. */
+function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
+  const linea = crearLinea(p);
+  const nComp = p.duracion || compasesSinDuracion;
+  const tFin = linea.inicio(nComp);
+  const cola = Math.max(0.5, ...p.voces.map(v => v.decae)) + 0.3;
+  const largo = Math.ceil((tFin + cola) * sr);
+  const ctx = new ClaseOffline(2, largo, sr);
+  const rec = crearRecursos(ctx, p.semilla);
+  const mezcla = crearMezcla(ctx, ctx.destination);
+  const buses = p.voces.map(v => crearBus(ctx, mezcla, v));
+  const evs = eventosEntre(p, linea, 0, nComp);
+  for (const ev of evs) programarEvento(ctx, p, buses, rec, ev, ev.t + 0.005);
+  return ctx.startRendering().then(buf => ({ buf, eventos: evs.length, fueraDeRango: rec.fueraDeRango, segundos: tFin }));
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES };
+}
+</script>
+<script>
+'use strict';
+/* ciclos · partituras de ejemplo */
+const EJEMPLOS = [
+{ nombre: '987 · Fibonacci', texto: `# 987 · Fibonacci en la métrica
+# Los compases recorren 9/8, 8/8 y 7/8: 9-8-7 forma 987,
+# término 16 de la serie. El bajo lee Fibonacci módulo 7
+# sobre una escala pitagórica de 7 quintas (modo lidio).
+tempo 132 · semilla 3
+afinación pitagórica 7
+base 55
+compás 9/8 8/8 7/8
+duración 24
+
+voz bombo
+  ritmo euclides(3)          # 3 golpes repartidos en cada compás
+voz caja
+  ritmo euclides(2) rotar 3
+  entra 4
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(7,12)       # ciclo propio de 12: gira contra la métrica
+  prob 0.85
+  entra 7
+voz bajo
+  ritmo euclides(5)
+  grados fib mod 7           # 0 1 1 2 3 5 1 6 0 6 6 5…
+  largo 1.6
+voz cuerda
+  tiempo bucle 7/16
+  ritmo x.x.xx.
+  grados fib mod 7 suma 2
+  octava 2
+  entra 10 · sale 22
+` },
+{ nombre: 'Cuartos de tono', texto: `# Cuartos de tono
+# 24 divisiones iguales de la octava: el grado 1 es un cuarto de tono.
+# Forma aditiva: cada voz entra en su compás y algunas se retiran.
+tempo 112 · semilla 11
+afinación edo 24
+base 41.2                    # mi grave
+compás 7/8*3 5/8
+duración 32
+
+voz bajo
+  tiempo compás 1/16
+  ritmo X.x.x..x.xx..x       # 14 semicorcheas: en el 5/8 el patrón se desfasa
+  grados 0 0 3 0 7 6 0 10
+  distorsión 0.5
+  largo 1.2
+voz bombo
+  ritmo x..x..x
+  entra 5
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(9,14)
+  entra 9 · sale 29
+voz caja
+  ritmo euclides(2) rotar 2
+  entra 9
+voz cuerda
+  tiempo bucle 11/16         # 11 contra 14
+  ritmo x.xx.x.x.x.
+  grados 0 5 13 3 10 17
+  octava 2
+  brillo 0.8
+  entra 13
+voz tom
+  tiempo divide 5            # quintillo sobre cada compás
+  grados 0 7 3 10 1
+  octava 2
+  entra 21 · sale 29
+` },
+{ nombre: 'Polimetría justa', texto: `# Polimetría justa
+# Bucles de 5, 7 y 9 semicorcheas sobre un pulso de 4/4.
+# Vuelven a coincidir cada 315 semicorcheas (mcm de 5, 7 y 9).
+# Afinación justa con la séptima armónica 7/4.
+tempo 96 · semilla 5
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 7/4
+base 110
+compás 4/4
+
+voz pulso
+  instrumento bombo
+  ritmo x...
+  vol 0.6
+voz cinco
+  instrumento cuerda
+  tiempo bucle 5/16
+  ritmo x.x..
+  grados 0 2 4
+  octava 1
+  pan -0.5
+voz siete
+  instrumento cuerda
+  tiempo bucle 7/16
+  ritmo x..x.x.
+  grados 4 6 3 1
+  octava 1
+  pan 0.5
+voz nueve
+  instrumento seno
+  tiempo bucle 9/16
+  ritmo x........
+  grados 0 4
+  largo 6
+  vol 0.3
+voz tic
+  instrumento charles
+  tiempo compás 1/16
+  ritmo todos
+  prob 0.6
+  vol 0.2
+` },
+{ nombre: 'Plantilla', texto: `# Plantilla
+tempo 120
+compás 4/4
+afinación edo 12
+base 110
+
+voz bombo
+  ritmo euclides(4)
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(5,8)
+voz bajo
+  tiempo compás 1/8
+  ritmo euclides(3,8)
+  grados 0 0 7 5
+` },
+];
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { EJEMPLOS };
+</script>
+<script>
+'use strict';
+/* ==========================================================================
+   ciclos · interfaz: editor, transporte, planificador en vivo y vistas.
+   ========================================================================== */
+const PUEDE_DESCARGAR = true; /*@@DESCARGAR@@*/
+const LOOKAHEAD = 0.15;           // s programados por delante con la pestaña visible
+const LOOKAHEAD_OCULTO = 1.2;     // con la pestaña oculta los temporizadores se espacian
+const TICK_MS = 25;
+const CLAVE_BORRADOR = 'ciclos.borrador';
+const COLORES = ['#586a45', '#4f6b82', '#b06a36', '#7f9a62', '#6f8aa0', '#c4844f', '#111111'];
+
+const $ = s => document.querySelector(s);
+const ui = {
+  titulo: $('#titulo'), estado: $('#estado'), aviso: $('#aviso'),
+  tocar: $('#b-tocar'), parar: $('#b-parar'), evaluar: $('#b-evaluar'), desde: $('#desde'),
+  lienzo: $('#lienzo'), regla: $('#regla'), afinTxt: $('#afin-txt'),
+  ejemplos: $('#ejemplos'), abrir: $('#b-abrir'), archivo: $('#archivo'), copiar: $('#b-copiar'),
+  guardar: $('#b-guardar'), wav: $('#b-wav'),
+  texto: $('#partitura'), numeros: $('#numeros'), mensajes: $('#mensajes'), referencia: $('#referencia'),
+};
+
+const S = {
+  ctx: null, mezcla: null, rec: null, semillaRec: null,
+  p: null, linea: null, cursores: [], buses: [],
+  epoca: 0, horizonte: 0, timer: null, tocando: false, pendiente: null,
+  sonados: [], vista: null, ultimo: null, lineasMal: new Set(), avisoRango: false,
+};
+
+/* ---------- utilidades de interfaz ---------- */
+let temporizadorAviso = 0;
+function anunciar(msg, accion) {
+  clearTimeout(temporizadorAviso);
+  ui.aviso.textContent = msg;
+  if (accion) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'enlace'; b.textContent = accion.texto;
+    b.addEventListener('click', () => { accion.fn(); ui.aviso.textContent = ''; });
+    ui.aviso.append(' ', b);
+  }
+  temporizadorAviso = setTimeout(() => { ui.aviso.textContent = ''; }, accion ? 9000 : 6000);
+}
+function guardarBorrador() {
+  try { localStorage.setItem(CLAVE_BORRADOR, ui.texto.value); } catch (e) { /* sin almacenamiento */ }
+}
+function leerBorrador() {
+  try { return localStorage.getItem(CLAVE_BORRADOR); } catch (e) { return null; }
+}
+function descargar(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function sello() {
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`;
+}
+
+/* ---------- editor ---------- */
+function actualizarNumeros() {
+  const n = ui.texto.value.split('\n').length;
+  let html = '';
+  for (let i = 1; i <= n; i++) html += S.lineasMal.has(i) ? `<span class="mal">${i}</span>\n` : `${i}\n`;
+  ui.numeros.innerHTML = html;
+  ui.numeros.scrollTop = ui.texto.scrollTop;
+}
+function irALinea(n) {
+  const lineas = ui.texto.value.split('\n');
+  let ini = 0;
+  for (let i = 0; i < n - 1 && i < lineas.length; i++) ini += lineas[i].length + 1;
+  const fin = ini + (lineas[n - 1] || '').length;
+  ui.texto.focus();
+  ui.texto.setSelectionRange(ini, fin);
+  const alto = parseFloat(getComputedStyle(ui.texto).lineHeight) || 22;
+  ui.texto.scrollTop = Math.max(0, (n - 4) * alto);
+}
+function mostrarMensajes(r) {
+  ui.mensajes.textContent = '';
+  S.lineasMal = new Set(r.errores.map(e => e.linea));
+  const fila = (clase, m) => {
+    const li = document.createElement('li');
+    li.className = clase;
+    if (m.linea) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'enlace'; b.textContent = `línea ${m.linea}`;
+      b.addEventListener('click', () => irALinea(m.linea));
+      li.append(b, ' ');
+    }
+    li.append(m.msg);
+    ui.mensajes.append(li);
+  };
+  r.errores.forEach(e => fila('error', e));
+  r.avisos.forEach(a => fila('aviso-linea', a));
+  if (r.partitura) {
+    const p = r.partitura;
+    const li = document.createElement('li');
+    li.className = 'ok';
+    const cs = p.compases.map(c => `${c.num}/${c.den}`);
+    const compases = cs.length > 6 ? cs.slice(0, 6).join(' ') + ' …' : cs.join(' ');
+    li.textContent = `Partitura válida · ${p.voces.length} voces · ${compases}${p.duracion ? ` · ${p.duracion} compases` : ' · sin final'}`;
+    ui.mensajes.append(li);
+  }
+  actualizarNumeros();
+}
+function evaluarTexto() {
+  const r = parsear(ui.texto.value);
+  mostrarMensajes(r);
+  if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); }
+  guardarBorrador();
+  return r;
+}
+
+/* ---------- audio en vivo ---------- */
+function iniciarPartitura(p, c0, tAudio) {
+  if (p.duracion) c0 %= p.duracion;
+  if (!S.rec || S.semillaRec !== p.semilla) { S.rec = crearRecursos(S.ctx, p.semilla); S.semillaRec = p.semilla; }
+  if (p !== S.p) {
+    const viejos = S.buses;
+    S.buses = p.voces.map(v => crearBus(S.ctx, S.mezcla, v));
+    if (viejos.length) setTimeout(() => viejos.forEach(b => { try { b.disconnect(); } catch (e) { /* ya desconectado */ } }), 6000);
+    S.p = p;
+    S.linea = crearLinea(p);
+  }
+  S.epoca = tAudio - S.linea.inicio(c0);
+  S.cursores = p.voces.map((_, vi) => crearCursor(p, S.linea, vi, c0));
+  S.horizonte = S.linea.inicio(c0);
+}
+
+function tick() {
+  if (!S.tocando) return;
+  const ahora = S.ctx.currentTime;
+  const objetivo = ahora + (document.hidden ? LOOKAHEAD_OCULTO : LOOKAHEAD);
+  for (let vuelta = 0; vuelta < 8; vuelta++) {
+    const limite = objetivo - S.epoca;
+    let corte = S.linea.fin, esCambio = false;
+    if (S.pendiente && S.pendiente.tScore <= corte) { corte = S.pendiente.tScore; esCambio = true; }
+    const hasta = Math.min(limite, corte);
+    if (hasta > S.horizonte) {
+      for (const cur of S.cursores) {
+        for (const ev of cur.avanzarHasta(hasta)) {
+          const tA = ev.t + S.epoca;
+          if (tA < ahora - 0.005) continue;       // llegó tarde: mejor callar que sonar fuera de tiempo
+          if (programarEvento(S.ctx, S.p, S.buses, S.rec, ev, tA)) {
+            S.sonados.push({ tA, voz: ev.voz, grado: ev.grado, dur: ev.dur });
+          }
+        }
+      }
+      S.horizonte = hasta;
+    }
+    if (limite < corte) break;
+    const tAudio = corte + S.epoca;
+    if (esCambio) { const { p, c } = S.pendiente; S.pendiente = null; iniciarPartitura(p, c, tAudio); }
+    else iniciarPartitura(S.p, 0, tAudio);    // fin de la pieza: vuelve al compás 1
+  }
+  if (S.sonados.length > 4000) S.sonados = S.sonados.slice(-2000);
+  if (S.rec.fueraDeRango && !S.avisoRango) {
+    S.avisoRango = true;
+    anunciar('Algunas notas quedan fuera del rango audible (16 Hz–12 kHz) y se omiten: revisa base, octava o grados.');
+  }
+}
+
+function tocar() {
+  const r = evaluarTexto();
+  if (!r.partitura) { anunciar('Corrige los errores marcados para poder tocar.'); return; }
+  if (!S.ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { anunciar('Este navegador no tiene Web Audio.'); return; }
+    S.ctx = new AC();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* opcional */ }
+  }
+  const ctx = S.ctx;
+  const reanudar = ctx.state !== 'running' ? ctx.resume() : Promise.resolve();
+  if (S.tocando) detenerAudio();
+  reanudar.then(() => {
+    S.mezcla = crearMezcla(ctx, ctx.destination);
+    S.p = null; S.sonados = []; S.pendiente = null; S.avisoRango = false;
+    if (S.rec) S.rec.fueraDeRango = 0;
+    S.tocando = true;
+    const c0 = Math.max(0, (parseInt(ui.desde.value, 10) || 1) - 1);
+    iniciarPartitura(r.partitura, c0, ctx.currentTime + 0.08);
+    S.timer = setInterval(tick, TICK_MS);
+    tick();
+    actualizarBotones();
+    animar();
+  }).catch(err => anunciar('No se pudo iniciar el audio: ' + err.message));
+}
+
+function detenerAudio() {
+  clearInterval(S.timer);
+  S.timer = null; S.tocando = false; S.pendiente = null;
+  const m = S.mezcla, ctx = S.ctx;
+  if (m) {
+    m.entrada.gain.cancelScheduledValues(ctx.currentTime);
+    m.entrada.gain.setTargetAtTime(0, ctx.currentTime, 0.015);
+    setTimeout(() => { try { m.lim.disconnect(); } catch (e) { /* ya desconectado */ } }, 250);
+  }
+  S.mezcla = null; S.buses = []; S.p = null; S.sonados = [];
+}
+function parar() {
+  if (!S.tocando) return;
+  detenerAudio();
+  actualizarBotones();
+  dibujar();
+}
+
+function evaluar() {
+  const r = evaluarTexto();
+  if (!r.partitura) {
+    if (S.tocando) anunciar('Hay errores: sigue sonando la versión anterior.');
+    dibujar();
+    return;
+  }
+  if (!S.tocando) { dibujar(); anunciar('Partitura evaluada.'); return; }
+  const L = S.linea;
+  const cb = L.compasEn(Math.max(0, S.horizonte)) + 1;
+  let tScore, c;
+  if (S.p.duracion && cb >= S.p.duracion) { tScore = L.fin; c = 0; }
+  else { tScore = L.inicio(cb); c = cb; }
+  S.pendiente = { p: r.partitura, c, tScore };
+  anunciar(`Los cambios entran en el compás ${c + 1}.`);
+}
+
+function actualizarBotones() {
+  ui.parar.disabled = !S.tocando;
+  ui.tocar.textContent = S.tocando ? '↺ Reiniciar' : '▶ Tocar';
+  ui.tocar.setAttribute('aria-pressed', String(S.tocando));
+}
+
+/* ---------- vistas ---------- */
+function prepararLienzo(cv, alto) {
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = Math.max(200, cv.clientWidth);
+  cv.style.height = alto + 'px';
+  if (cv.width !== Math.round(ancho * dpr) || cv.height !== Math.round(alto * dpr)) {
+    cv.width = Math.round(ancho * dpr); cv.height = Math.round(alto * dpr);
+  }
+  const g = cv.getContext('2d');
+  if (!g) return null;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { g, ancho, alto };
+}
+const FUENTE = '11px "Fira Code", ui-monospace, Menlo, Consolas, monospace';
+
+function dibujar() {
+  const p = S.tocando ? S.p : S.ultimo;
+  const filaH = 22, cabH = 26, izq = 70, der = 6;
+  const n = p ? p.voces.length : 0;
+  const lz = prepararLienzo(ui.lienzo, cabH + Math.max(1, n) * filaH + 8);
+  if (!lz) return;
+  const { g, ancho, alto } = lz;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, ancho, alto);
+  g.font = FUENTE; g.textBaseline = 'middle';
+  if (!p) {
+    g.fillStyle = '#62655a';
+    g.fillText('Escribe una partitura y pulsa Tocar.', 8, alto / 2);
+    ui.estado.textContent = 'sin partitura';
+    return;
+  }
+  const L = S.tocando ? S.linea : crearLinea(p);
+  const Wm = L.P === 1 ? 2 : Math.min(L.P, 4);
+  let tAhora = null, cAhora;
+  if (S.tocando) {
+    tAhora = S.ctx.currentTime - (S.ctx.baseLatency || 0) - S.epoca;
+    cAhora = L.compasEn(Math.max(0, tAhora));
+  } else {
+    cAhora = Math.max(0, (parseInt(ui.desde.value, 10) || 1) - 1);
+    if (p.duracion) cAhora %= p.duracion;
+  }
+  const c0 = Math.floor(cAhora / Wm) * Wm;
+  let c1 = c0 + Wm;
+  if (p.duracion) c1 = Math.min(c1, p.duracion);
+  if (!S.vista || S.vista.p !== p || S.vista.c0 !== c0 || S.vista.c1 !== c1) {
+    S.vista = { p, c0, c1, evs: eventosEntre(p, L, c0, c1) };
+  }
+  const t0 = L.inicio(c0), t1 = L.inicio(c1);
+  const util = ancho - izq - der;
+  const X = t => izq + ((t - t0) / (t1 - t0)) * util;
+
+  // compases y subdivisiones
+  for (let c = c0; c < c1; c++) {
+    const cm = L.compas(c), xa = X(L.inicio(c)), xb = X(L.inicio(c + 1));
+    g.fillStyle = (c - c0) % 2 ? '#fafaf7' : '#ffffff';
+    g.fillRect(xa, cabH, xb - xa, alto - cabH);
+    g.strokeStyle = '#c9ccc0'; g.lineWidth = 1;
+    for (let k = 1; k < cm.num; k++) {
+      const x = Math.round(xa + ((xb - xa) * k) / cm.num) + 0.5;
+      g.beginPath(); g.moveTo(x, cabH - 6); g.lineTo(x, cabH - 2); g.stroke();
+    }
+    g.strokeStyle = '#111111';
+    const x = Math.round(xa) + 0.5;
+    g.beginPath(); g.moveTo(x, 4); g.lineTo(x, alto); g.stroke();
+    g.fillStyle = '#111111';
+    g.fillText(`c${c + 1}`, xa + 4, 10);
+    g.fillStyle = '#62655a';
+    const ancho1 = g.measureText(`c${c + 1}`).width;
+    if (xb - xa > ancho1 + 40) g.fillText(`${cm.num}/${cm.den}`, xa + 10 + ancho1, 10);
+  }
+  // filas
+  p.voces.forEach((v, i) => {
+    const y = cabH + i * filaH;
+    g.strokeStyle = '#ecede6';
+    g.beginPath(); g.moveTo(izq, y + filaH - 0.5); g.lineTo(ancho - der, y + filaH - 0.5); g.stroke();
+    g.fillStyle = v.silencio ? '#b5b8ac' : COLORES[i % COLORES.length];
+    g.fillText(v.nombre.length > 9 ? v.nombre.slice(0, 8) + '…' : v.nombre, 4, y + filaH / 2);
+  });
+  const ancho_ = ev => {
+    const v = p.voces[ev.voz];
+    const d = v.melodico ? ev.dur * v.largo : ev.dur * 0.45;
+    return Math.max(2, (d / (t1 - t0)) * util - 1);
+  };
+  // esqueleto: lo que la partitura va a tocar en esta ventana
+  g.lineWidth = 1;
+  for (const ev of S.vista.evs) {
+    const y = cabH + ev.voz * filaH, h = ev.acento ? filaH - 6 : filaH - 10;
+    g.strokeStyle = COLORES[ev.voz % COLORES.length];
+    g.globalAlpha = 0.45;
+    g.strokeRect(Math.round(X(ev.t)) + 0.5, y + (filaH - h) / 2 + 0.5, Math.min(ancho_(ev), ancho - der - X(ev.t)), h - 1);
+  }
+  g.globalAlpha = 1;
+  // lo que ya sonó
+  if (S.tocando) {
+    const tAudio = S.ctx.currentTime - (S.ctx.baseLatency || 0);
+    for (const s of S.sonados) {
+      const ts = s.tA - S.epoca;
+      if (ts < t0 - 1e-6 || ts >= t1 || s.tA > tAudio) continue;
+      const v = p.voces[s.voz];
+      if (!v) continue;
+      const y = cabH + s.voz * filaH, x = X(ts);
+      const w = Math.min(Math.max(2, ((v.melodico ? s.dur * v.largo : s.dur * 0.45) / (t1 - t0)) * util - 1), ancho - der - x);
+      const vivo = tAudio - s.tA < 0.09;
+      g.fillStyle = vivo ? '#111111' : COLORES[s.voz % COLORES.length];
+      g.fillRect(x, y + 5, w, filaH - 10);
+      if (s.grado != null && w > 16) {
+        g.fillStyle = '#ffffff';
+        g.fillText(String(s.grado), x + 3, y + filaH / 2 + 0.5);
+      }
+    }
+    if (tAhora >= t0 && tAhora < t1) {
+      const x = Math.round(X(tAhora)) + 0.5;
+      g.strokeStyle = '#b06a36'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, alto); g.stroke();
+    }
+  }
+  // estado
+  const cm = L.compas(cAhora);
+  const pos = `c${cAhora + 1}${p.duracion ? '/' + p.duracion : ''}`;
+  const txt = S.tocando
+    ? `${pos} · ${cm.num}/${cm.den} · ♩=${p.tempo}${S.pendiente ? ` · cambio en c${S.pendiente.c + 1}` : ''}`
+    : `detenido · ${pos} · ♩=${p.tempo}`;
+  if (ui.estado.textContent !== txt) ui.estado.textContent = txt;
+}
+
+let raf = 0;
+function animar() {
+  cancelAnimationFrame(raf);
+  const paso = () => { dibujar(); if (S.tocando) raf = requestAnimationFrame(paso); };
+  raf = requestAnimationFrame(paso);
+}
+
+/** Regla de afinación: los grados en cents sobre la octava, con 12-EDO de referencia. */
+function dibujarRegla(p) {
+  const lz = prepararLienzo(ui.regla, 50);
+  if (!lz) return;
+  const { g, ancho } = lz;
+  const izq = 8, der = 28, y = 30;
+  const X = c => izq + (c / 1200) * (ancho - izq - der);
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, ancho, 50);
+  g.font = FUENTE; g.textBaseline = 'middle';
+  g.strokeStyle = '#c9ccc0'; g.lineWidth = 1;
+  for (let k = 0; k <= 12; k++) { const x = Math.round(X(k * 100)) + 0.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 7); g.stroke(); }
+  g.strokeStyle = '#111111';
+  g.beginPath(); g.moveTo(X(0), y + 0.5); g.lineTo(X(1200), y + 0.5); g.stroke();
+  const cents = p.ratios.map(r => 1200 * Math.log2(r));
+  const minSep = cents.length > 1 ? Math.min(...cents.slice(1).map((c, i) => X(c) - X(cents[i]))) : 99;
+  const cadaCuanto = minSep < 16 ? Math.ceil(16 / Math.max(1, minSep)) : 1;
+  g.textAlign = 'center';
+  cents.forEach((c, i) => {
+    const x = Math.round(X(c)) + 0.5;
+    g.strokeStyle = '#586a45'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y - 9); g.lineTo(x, y); g.stroke();
+    if (i % cadaCuanto === 0) { g.fillStyle = '#586a45'; g.fillText(String(i), x, y - 17); }
+  });
+  g.fillStyle = '#62655a';
+  g.fillText('8ª', X(1200) + 13, y);
+  g.textAlign = 'left';
+  const af = p.afinacion;
+  const nombre = af.tipo === 'edo' ? `${af.n}-EDO` : af.tipo === 'pitagorica' ? `pitagórica de ${af.n} quintas`
+    : af.tipo === 'razones' ? 'razones justas' : 'cents';
+  ui.afinTxt.textContent = `${nombre} · ${p.ratios.length} grados por octava · grado 0 = ${p.base} Hz · las marcas grises son 12-EDO`;
+}
+
+/* ---------- archivos ---------- */
+async function exportarWAV() {
+  const r = evaluarTexto();
+  if (!r.partitura) { anunciar('Corrige los errores antes de exportar.'); return; }
+  const Clase = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!Clase) { anunciar('Este navegador no puede renderizar audio fuera de tiempo real.'); return; }
+  const n = r.partitura.duracion || 16;
+  ui.wav.disabled = true;
+  anunciar(`Renderizando ${n} compases…`);
+  try {
+    const res = await renderizar(r.partitura, Clase, 16, 44100);
+    const wav = codificarWAV([res.buf.getChannelData(0), res.buf.getChannelData(1)], res.buf.sampleRate);
+    descargar(new Blob([wav], { type: 'audio/wav' }), `ciclos-${sello()}.wav`);
+    anunciar(`WAV listo: ${res.segundos.toFixed(1)} s, ${res.eventos} golpes${r.partitura.duracion ? '' : ' (sin «duración» se exportan 16 compases)'}.`);
+  } catch (e) {
+    anunciar('No se pudo exportar: ' + e.message);
+  } finally { ui.wav.disabled = false; }
+}
+function copiarTexto() {
+  const texto = ui.texto.value;
+  const seleccionar = () => { ui.texto.focus(); ui.texto.select(); anunciar('Texto seleccionado: cópialo con el menú del sistema.'); };
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { seleccionar(); return; }
+  navigator.clipboard.writeText(texto).then(() => anunciar('Partitura copiada.'), seleccionar);
+}
+function cargarTexto(texto, origen) {
+  const anterior = ui.texto.value;
+  ui.texto.value = texto;
+  ui.texto.scrollTop = 0;
+  evaluarTexto();
+  dibujar();
+  if (anterior.trim() && anterior !== texto) {
+    anunciar(`Cargado: ${origen}.`, { texto: 'Recuperar el texto anterior', fn: () => { ui.texto.value = anterior; evaluarTexto(); dibujar(); } });
+  }
+}
+
+/* ---------- eventos ---------- */
+function iniciar() {
+  EJEMPLOS.forEach((e, i) => {
+    const o = document.createElement('option');
+    o.value = String(i); o.textContent = e.nombre;
+    ui.ejemplos.append(o);
+  });
+  ui.titulo.addEventListener('click', () => location.reload());
+  ui.tocar.addEventListener('click', tocar);
+  ui.parar.addEventListener('click', parar);
+  ui.evaluar.addEventListener('click', evaluar);
+  ui.desde.addEventListener('change', () => { if (!S.tocando) dibujar(); });
+  ui.ejemplos.addEventListener('change', () => {
+    const e = EJEMPLOS[Number(ui.ejemplos.value)];
+    if (e) cargarTexto(e.texto, `ejemplo «${e.nombre}»`);
+    ui.ejemplos.value = '';
+  });
+  ui.abrir.addEventListener('click', () => ui.archivo.click());
+  ui.archivo.addEventListener('change', () => {
+    const f = ui.archivo.files && ui.archivo.files[0];
+    if (!f) return;
+    const lector = new FileReader();
+    lector.onload = () => cargarTexto(String(lector.result), f.name);
+    lector.onerror = () => anunciar('No se pudo leer el archivo.');
+    lector.readAsText(f);
+    ui.archivo.value = '';
+  });
+  ui.copiar.addEventListener('click', copiarTexto);
+  if (PUEDE_DESCARGAR && ui.guardar) {
+    ui.guardar.addEventListener('click', () => {
+      descargar(new Blob([ui.texto.value], { type: 'text/plain;charset=utf-8' }), `partitura-${sello()}.txt`);
+      anunciar('Partitura guardada como .txt.');
+    });
+  }
+  if (PUEDE_DESCARGAR && ui.wav) ui.wav.addEventListener('click', exportarWAV);
+
+  let tEntrada = 0;
+  ui.texto.addEventListener('input', () => {
+    actualizarNumeros();
+    clearTimeout(tEntrada);
+    tEntrada = setTimeout(guardarBorrador, 400);
+  });
+  ui.texto.addEventListener('scroll', () => { ui.numeros.scrollTop = ui.texto.scrollTop; });
+  document.addEventListener('keydown', e => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key === 'Enter') { e.preventDefault(); if (S.tocando) evaluar(); else tocar(); }
+    else if (mod && e.key === '.') { e.preventDefault(); parar(); }
+  });
+  window.addEventListener('resize', () => { dibujar(); if (S.ultimo) dibujarRegla(S.ultimo); });
+  if (window.matchMedia && window.matchMedia('(min-width: 960px)').matches) ui.referencia.open = true;
+
+  ui.texto.value = leerBorrador() || EJEMPLOS[0].texto;
+  evaluarTexto();
+  dibujar();
+  actualizarBotones();
+}
+
+if (typeof window !== 'undefined' && document.readyState !== 'loading') iniciar();
+else if (typeof window !== 'undefined') document.addEventListener('DOMContentLoaded', iniciar);
+</script>
+</body>
+</html>

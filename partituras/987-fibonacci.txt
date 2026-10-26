@@ -1,0 +1,30 @@
+# 987 · Fibonacci en la métrica
+# Los compases recorren 9/8, 8/8 y 7/8: 9-8-7 forma 987,
+# término 16 de la serie. El bajo lee Fibonacci módulo 7
+# sobre una escala pitagórica de 7 quintas (modo lidio).
+tempo 132 · semilla 3
+afinación pitagórica 7
+base 55
+compás 9/8 8/8 7/8
+duración 24
+
+voz bombo
+  ritmo euclides(3)          # 3 golpes repartidos en cada compás
+voz caja
+  ritmo euclides(2) rotar 3
+  entra 4
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(7,12)       # ciclo propio de 12: gira contra la métrica
+  prob 0.85
+  entra 7
+voz bajo
+  ritmo euclides(5)
+  grados fib mod 7           # 0 1 1 2 3 5 1 6 0 6 6 5…
+  largo 1.6
+voz cuerda
+  tiempo bucle 7/16
+  ritmo x.x.xx.
+  grados fib mod 7 suma 2
+  octava 2
+  entra 10 · sale 22
