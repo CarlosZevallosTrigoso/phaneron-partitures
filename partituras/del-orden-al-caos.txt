@@ -1,0 +1,35 @@
+# Del orden al caos
+# El mapa logístico x → r·x·(1−x) con r subiendo hasta 4:
+# primero un valor fijo, luego ciclos de 2, 4 y 8, al final caos.
+# Recamán y Collatz dan saltos que van y vuelven.
+# Afinación: nueve razones áureas apiladas.
+tempo 126 · semilla 9
+afinación generador phi 9
+base 41.2
+compás 7/8
+duración 40
+
+voz bajo
+  tiempo compás 1/16
+  ritmo euclides(5,14)
+  grados logistico(2.9,4,180) mod 9
+  distorsión 0.4
+voz bombo
+  ritmo euclides(3)
+voz charles
+  tiempo compás 1/16
+  ritmo serie logistico(3.4,4,500) mod 2
+voz caja
+  ritmo euclides(2) rotar 3
+  entra 5
+voz cuerda
+  tiempo bucle 5/16
+  ritmo x.x.x
+  grados recaman mod 9
+  octava 2
+  entra 9
+voz tom
+  tiempo divide 3
+  grados collatz(27) mod 9
+  octava 1
+  entra 17 · sale 37

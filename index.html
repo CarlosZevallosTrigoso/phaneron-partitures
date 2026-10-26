@@ -177,6 +177,8 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>afinación pitagórica 7</dt><dd>n quintas 3/2 apiladas y plegadas a la octava.</dd>
         <dt>afinación razones 1/1 9/8 5/4 3/2</dt><dd>Escala por razones justas.</dd>
         <dt>afinación cents 0 150 350 500</dt><dd>Escala en cents.</dd>
+        <dt>afinación generador phi 9</dt><dd>Apila n veces una razón (3/2, 7/4, 11/8, phi…) y la pliega a la octava. La pitagórica es <code>generador 3/2</code>. Por el teorema de las tres distancias, la escala tiene a lo sumo tres tamaños de paso.</dd>
+        <dt>afinación stern 7</dt><dd>Las n razones más simples que aparecen entre términos vecinos de la serie de Stern (1/1, 6/5, 5/4, 4/3, 3/2…).</dd>
         <dt>base 55</dt><dd>Frecuencia en Hz del grado 0.</dd>
         <dt>semilla 7</dt><dd>Fija todo lo aleatorio (prob, ruido, cuerda): misma semilla, mismo resultado.</dd>
       </dl>
@@ -197,14 +199,34 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>ritmo euclides(3,8)</dt><dd>Ciclo propio de n pasos que corre contra la métrica.</dd>
         <dt>ritmo x..X.x..</dt><dd>Golpes escritos: <code>x</code> golpe, <code>X</code> acento, <code>.</code> silencio, <code>|</code> se ignora. El patrón cicla sobre su propio largo.</dd>
         <dt>ritmo todos</dt><dd>Un golpe en cada paso (por defecto).</dd>
-        <dt>… rotar 2 · invertir · retrógrado</dt><dd>Transformaciones que se aplican en orden después del patrón.</dd>
+        <dt>ritmo thue · ritmo serie pascal mod 2</dt><dd>Lee una serie paso a paso sin volver nunca al inicio: 0 es silencio, 1 golpe, 2 o más acento. Las series que crecen necesitan <code>mod n</code>; con <code>mod 2</code> cada valor es golpe o silencio.</dd>
+        <dt>ritmo duraciones kolakoski</dt><dd>Cada valor de la serie es la duración en pasos hasta el golpe siguiente; en bajo y seno, también el largo de la nota.</dd>
+        <dt>… rotar 2 · invertir · retrógrado</dt><dd>Transformaciones que se aplican en orden después del patrón. A las series no se les aplica retrógrado, porque no terminan.</dd>
       </dl>
 
       <h2>Altura</h2>
       <dl>
         <dt>grados 0 3 5 7</dt><dd>Cada golpe toma el siguiente grado de la lista. Grados mayores que la escala suben de octava; negativos bajan.</dd>
-        <dt>grados fib mod 7 suma 2</dt><dd>Series: <code>fib</code> (0 1 1 2 3 5…) y <code>primos</code> (2 3 5 7…). Necesitan <code>mod n</code>; <code>suma n</code> transpone.</dd>
+        <dt>grados norgard · grados recaman mod 7 suma 2</dt><dd>Cada golpe toma el siguiente término de la serie. <code>mod n</code> lo lleva a la escala y <code>suma n</code> transpone.</dd>
         <dt>octava 1</dt><dd>Desplaza la voz n octavas.</dd>
+      </dl>
+
+      <h2>Series</h2>
+      <p>Sirven en <code>ritmo</code> y en <code>grados</code>. Las marcadas con «mod» crecen sin límite y lo exigen. Los argumentos van entre paréntesis, con punto decimal.</p>
+      <dl>
+        <dt>fib · mod</dt><dd>Fibonacci: 0 1 1 2 3 5 8…</dd>
+        <dt>primos · mod</dt><dd>2 3 5 7 11 13…</dd>
+        <dt>norgard</dt><dd>Serie infinita de Per Nørgård: 0 1 −1 2 1 0 −2 3… Cada cuatro términos reaparece la serie entera; cada dos, su inversión.</dd>
+        <dt>recaman · mod</dt><dd>Retrocede n si puede y si no avanza n: 0 1 3 6 2 7 13 20…</dd>
+        <dt>collatz(27) · mod</dt><dd>La trayectoria 3n+1 desde el número dado hasta 4 2 1; la frase completa se repite.</dd>
+        <dt>conway</dt><dd>Mira y di: los dígitos de 1, 11, 21, 1211, 111221… Solo da 1, 2 y 3.</dd>
+        <dt>stern · mod</dt><dd>Diatómica de Stern: 0 1 1 2 1 3 2 3 1 4 3 5…</dd>
+        <dt>thue</dt><dd>Thue-Morse: 0 1 1 0 1 0 0 1… Nunca repite un bloque tres veces seguidas.</dd>
+        <dt>palabrafib</dt><dd>Palabra de Fibonacci: 0 1 0 0 1 0 1 0… Golpes repartidos según la razón áurea, sin período.</dd>
+        <dt>kolakoski</dt><dd>1 2 2 1 1 2 1 2 2… Igual a la lista de sus propias rachas.</dd>
+        <dt>pascal · mod</dt><dd>Triángulo de Pascal leído fila por fila; con <code>mod 2</code> da el triángulo de Sierpinski.</dd>
+        <dt>automata(30,17,0)</dt><dd>Autómata celular elemental: regla (0–255), ancho del anillo y columna. Columna 0 lee las filas una tras otra; una columna de 1 al ancho lee esa celda, una generación por paso. Varias voces que leen columnas distintas de la misma regla comparten la rejilla. Con anchos pares, algunas reglas se apagan.</dd>
+        <dt>logistico(2.9,4,180) · mod</dt><dd>Mapa logístico x → r·x·(1−x). r va del primer valor al segundo en n términos: de un punto fijo a ciclos de 2, 4, 8 y luego caos. <code>mod n</code> reparte x entre 0 y n−1.</dd>
       </dl>
 
       <h2>Sonido</h2>
@@ -317,33 +339,201 @@ function parsearGolpes(s) {
   return out.length ? out : null;
 }
 
-/* ---------- series numéricas (se amplían en la fase 2) ---------- */
+/* ---------- series numéricas ----------
+   Cada serie es una función del índice k ≥ 0. Las que crecen sin límite
+   exigen «mod n»; algunas lo usan por dentro para no desbordar. */
 const _fibCache = new Map();
+function fibMod(k, m) {
+  let a = _fibCache.get(m);
+  if (!a) { a = [0 % m, 1 % m]; _fibCache.set(m, a); }
+  while (a.length <= k) a.push((a[a.length - 1] + a[a.length - 2]) % m);
+  return a[k];
+}
 const _primos = [2];
-const SERIES = {
-  /** Fibonacci 0 1 1 2 3 5 8…, calculada ya reducida módulo m. */
-  fib(i, m) {
-    let a = _fibCache.get(m);
-    if (!a) { a = [0 % m, 1 % m]; _fibCache.set(m, a); }
-    while (a.length <= i) a.push((a[a.length - 1] + a[a.length - 2]) % m);
-    return a[i];
-  },
-  /** Primos 2 3 5 7 11… */
-  primos(i) {
-    while (_primos.length <= i) {
-      let c = _primos[_primos.length - 1] + 1;
-      for (;; c++) {
-        let es = true;
-        for (const q of _primos) { if (q * q > c) break; if (c % q === 0) { es = false; break; } }
-        if (es) break;
-      }
-      _primos.push(c);
+function primo(k) {
+  while (_primos.length <= k) {
+    let c = _primos[_primos.length - 1] + 1;
+    for (;; c++) {
+      let es = true;
+      for (const q of _primos) { if (q * q > c) break; if (c % q === 0) { es = false; break; } }
+      if (es) break;
     }
-    return _primos[i];
-  },
+    _primos.push(c);
+  }
+  return _primos[k];
+}
+/** Serie infinita de Per Nørgård: a(2n) = −a(n), a(2n+1) = a(n) + 1. */
+function norgard(k) { return k === 0 ? 0 : k % 2 ? norgard((k - 1) / 2) + 1 : 0 - norgard(k / 2); }
+const _recaman = [0], _recamanVistos = new Set([0]);
+/** Recamán: retrocede n si el resultado es ≥ 0 y nuevo; si no, avanza n. */
+function recaman(k) {
+  while (_recaman.length <= k) {
+    const n = _recaman.length, prev = _recaman[n - 1];
+    const v = prev - n >= 0 && !_recamanVistos.has(prev - n) ? prev - n : prev + n;
+    _recaman.push(v); _recamanVistos.add(v);
+  }
+  return _recaman[k];
+}
+const _collatz = new Map();
+/** Trayectoria de Collatz desde n0 hasta 1; la frase completa se repite. */
+function collatz(n0, k) {
+  let t = _collatz.get(n0);
+  if (!t) {
+    t = [n0];
+    for (let x = n0; x !== 1 && t.length < 100000;) { x = x % 2 ? 3 * x + 1 : x / 2; t.push(x); }
+    _collatz.set(n0, t);
+  }
+  return t[k % t.length];
+}
+const _conway = { terminos: ['1'], digitos: [1] };
+/** Mira y di (Conway): los dígitos de 1, 11, 21, 1211, 111221… en fila. */
+function conway(k) {
+  const c = _conway;
+  while (c.digitos.length <= k) {
+    const s = c.terminos[c.terminos.length - 1];
+    let sig = '';
+    for (let i = 0; i < s.length;) {
+      let j = i;
+      while (j < s.length && s[j] === s[i]) j++;
+      sig += (j - i) + s[i];
+      i = j;
+    }
+    c.terminos.push(sig);
+    for (const ch of sig) c.digitos.push(Number(ch));
+  }
+  return c.digitos[k];
+}
+const _stern = [0, 1];
+/** Diatómica de Stern: s(2n) = s(n), s(2n+1) = s(n) + s(n+1). */
+function stern(k) {
+  while (_stern.length <= k) {
+    const n = _stern.length;
+    _stern.push(n % 2 ? _stern[(n - 1) / 2] + _stern[(n + 1) / 2] : _stern[n / 2]);
+  }
+  return _stern[k];
+}
+/** Thue-Morse: paridad de los unos en binario. */
+function thue(k) { let b = 0; for (let x = k; x > 0; x = Math.floor(x / 2)) b ^= x % 2; return b; }
+const PHI = (1 + Math.sqrt(5)) / 2;
+/** Palabra de Fibonacci 0100101001001…: reparto de golpes según la razón áurea. */
+function palabraFib(k) { return 2 + Math.floor((k + 1) * PHI) - Math.floor((k + 2) * PHI); }
+const _kolakoski = [1, 2, 2];
+let _kolakoskiI = 2;   // racha que se está escribiendo
+/** Kolakoski: la secuencia es igual a la lista de sus propias rachas. */
+function kolakoski(k) {
+  while (_kolakoski.length <= k) {
+    const v = _kolakoskiI % 2 === 0 ? 1 : 2;
+    for (let j = 0; j < _kolakoski[_kolakoskiI]; j++) _kolakoski.push(v);
+    _kolakoskiI++;
+  }
+  return _kolakoski[k];
+}
+const _pascal = new Map();
+/** Triángulo de Pascal módulo m, leído fila por fila (1; 1 1; 1 2 1; …). */
+function pascalMod(k, m) {
+  let p = _pascal.get(m);
+  if (!p) { p = { filas: [[1 % m]], plano: [1 % m] }; _pascal.set(m, p); }
+  while (p.plano.length <= k) {
+    const ant = p.filas[p.filas.length - 1];
+    const fila = [1 % m];
+    for (let j = 1; j < ant.length; j++) fila.push((ant[j - 1] + ant[j]) % m);
+    fila.push(1 % m);
+    p.filas.push(fila);
+    p.plano.push(...fila);
+  }
+  return p.plano[k];
+}
+const _automatas = new Map();
+/**
+ * Autómata celular elemental (Wolfram) en un anillo de «ancho» celdas,
+ * empezando con una sola celda viva al centro. columna 0: lee las filas
+ * una tras otra; columna j (1..ancho): lee esa celda, una generación por paso.
+ */
+function automata(regla, ancho, columna, k) {
+  const clave = regla + '|' + ancho;
+  let gens = _automatas.get(clave);
+  if (!gens) {
+    const g0 = new Uint8Array(ancho); g0[Math.floor(ancho / 2)] = 1;
+    gens = [g0]; _automatas.set(clave, gens);
+  }
+  const gen = columna ? k : Math.floor(k / ancho);
+  while (gens.length <= gen) {
+    const a = gens[gens.length - 1], b = new Uint8Array(ancho);
+    for (let i = 0; i < ancho; i++) {
+      const idx = (a[(i - 1 + ancho) % ancho] << 2) | (a[i] << 1) | a[(i + 1) % ancho];
+      b[i] = (regla >> idx) & 1;
+    }
+    gens.push(b);
+  }
+  return gens[gen][columna ? columna - 1 : k % ancho];
+}
+const _logistico = new Map();
+/** Mapa logístico x → r·x·(1−x), con r que va de r1 a r2 en n pasos. Devuelve ⌊x·m⌋. */
+function logistico(args, k, m) {
+  const [r1, r2, n] = args;
+  const clave = args.join('|');
+  let xs = _logistico.get(clave);
+  if (!xs) { xs = [0.3]; _logistico.set(clave, xs); }
+  while (xs.length <= k) {
+    const j = xs.length - 1, x = xs[j];
+    const r = r1 + (r2 - r1) * Math.min(1, j / n);
+    xs.push(r * x * (1 - x));
+  }
+  return Math.min(m - 1, Math.floor(xs[k] * m));
+}
+
+/* Registro: argumentos admitidos, si crece sin límite y cómo se calcula. */
+const SERIES = {
+  fib:        { crece: true,  args: [], valor: (k, a, m) => fibMod(k, m) },
+  primos:     { crece: true,  args: [], valor: k => primo(k) },
+  norgard:    { crece: false, args: [], valor: k => norgard(k) },
+  recaman:    { crece: true,  args: [], valor: k => recaman(k) },
+  collatz:    { crece: true,  args: [{ def: 27, min: 1, max: 1e9, entero: true }], valor: (k, a) => collatz(a[0], k) },
+  conway:     { crece: false, args: [], valor: k => conway(k) },
+  stern:      { crece: true,  args: [], valor: k => stern(k) },
+  thue:       { crece: false, args: [], valor: k => thue(k) },
+  palabrafib: { crece: false, args: [], valor: k => palabraFib(k) },
+  kolakoski:  { crece: false, args: [], valor: k => kolakoski(k) },
+  pascal:     { crece: true,  args: [], valor: (k, a, m) => pascalMod(k, m) },
+  automata:   { crece: false, args: [{ def: 30, min: 0, max: 255, entero: true }, { def: 17, min: 3, max: 64, entero: true },
+                                     { def: 0, min: 0, max: 64, entero: true }],
+                valor: (k, a) => automata(a[0], a[1], a[2], k) },
+  logistico:  { crece: true,  args: [{ def: 3.7, min: 0, max: 4 }, { def: null, min: 0, max: 4 }, { def: 256, min: 1, max: 1e6, entero: true }],
+                valor: (k, a, m) => logistico(a, k, m) },
 };
+const ALIAS_SERIES = {
+  fibonacci: 'fib', 'nørgard': 'norgard', norgaard: 'norgard', 'nørgaard': 'norgard', miraydi: 'conway',
+  palabraaurea: 'palabrafib', logistica: 'logistico', automatas: 'automata',
+};
+/** Lee «nombre» o «nombre(a,b,c)». Devuelve null si no es una serie, {error} si los argumentos fallan. */
+function parsearSerie(tok) {
+  const m = /^([a-zø]+)(?:\(([^)]*)\))?$/.exec(normalizar(tok || ''));
+  if (!m) return null;
+  const nombre = ALIAS_SERIES[m[1]] || m[1];
+  const def = SERIES[nombre];
+  if (!def) return null;
+  const crudos = m[2] != null ? m[2].split(',').filter(s => s !== '') : [];
+  if (crudos.length > def.args.length) {
+    return { error: def.args.length ? `«${nombre}» acepta hasta ${def.args.length} argumentos` : `«${nombre}» no lleva argumentos` };
+  }
+  const args = [];
+  for (let i = 0; i < def.args.length; i++) {
+    const spec = def.args[i];
+    if (i >= crudos.length) { args.push(spec.def); continue; }
+    const v = numero(crudos[i]);
+    if (Number.isNaN(v) || (spec.entero && !Number.isInteger(v)) || v < spec.min || v > spec.max) {
+      return { error: `argumento ${i + 1} de «${nombre}» fuera de rango (${spec.min}–${spec.max}${spec.entero ? ', entero' : ''})` };
+    }
+    args.push(v);
+  }
+  if (nombre === 'automata' && args[2] > args[1]) return { error: `la columna de «automata» va de 1 al ancho (${args[1]}); 0 lee las filas` };
+  if (nombre === 'logistico' && args[1] == null) args[1] = args[0];
+  return { nombre, args };
+}
+function valorSerie(s, k, m) { return SERIES[s.nombre].valor(k, s.args, m); }
+
 function valorGrado(g, h) {
-  let v = g.tipo === 'lista' ? g.valores[h % g.valores.length] : SERIES[g.serie](h, g.mod);
+  let v = g.tipo === 'lista' ? g.valores[h % g.valores.length] : valorSerie(g.serie, h, g.mod);
   if (g.mod) v = mod(v, g.mod);
   return v + g.suma;
 }
@@ -359,6 +549,17 @@ function ratiosAfinacion(af) {
   if (af.tipo === 'pitagorica') return ordenarUnicos(Array.from({ length: af.n }, (_, k) => Math.pow(1.5, k)));
   if (af.tipo === 'razones') return ordenarUnicos(af.valores);
   if (af.tipo === 'cents') return ordenarUnicos(af.valores.map(c => Math.pow(2, c / 1200)));
+  if (af.tipo === 'generador') return ordenarUnicos(Array.from({ length: af.n }, (_, k) => Math.pow(af.r, k)));
+  if (af.tipo === 'stern') {
+    // cocientes s(k)/s(k+1): recorren todas las fracciones; se pliegan a la octava
+    // y se guardan las n primeras distintas (las más simples aparecen antes)
+    const vistos = [];
+    for (let k = 1; vistos.length < af.n && k < 200000; k++) {
+      const r = plegarOctava(stern(k) / stern(k + 1));
+      if (!vistos.some(v => Math.abs(v - r) < 1e-9)) vistos.push(r);
+    }
+    return vistos.sort((a, b) => a - b);
+  }
   throw new Error('afinación desconocida');
 }
 /** Frecuencia de un grado; los grados fuera de 0..n-1 cambian de octava. */
@@ -372,12 +573,35 @@ function frecuencia(ratios, base, grado) {
 const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio',
   ...Object.keys(PARAMS_NUM)]);
 
+/** Lee «mod n» y «suma n» a partir de args[i]; devuelve el índice siguiente o -1 si hubo error. */
+function leerModSuma(dest, clave, args, i, err) {
+  const v = entero(args[i + 1]);
+  if (clave === 'mod') {
+    if (!(v >= 1)) { err('«mod» necesita un entero ≥ 1'); return -1; }
+    dest.mod = v;
+  } else {
+    if (Number.isNaN(v)) { err('«suma» necesita un entero'); return -1; }
+    dest.suma = v;
+  }
+  return i + 2;
+}
+function errorSerieSinMod(s) {
+  return `la serie «${s.nombre}» crece sin límite: añade «mod n»${s.nombre === 'logistico' ? ' (reparte el valor entre 0 y n−1)' : ''}`;
+}
+
 function parsearRitmo(args, err) {
-  const r = { gen: null, k: 0, n: null, pat: null, transf: [] };
+  const r = { gen: null, k: 0, n: null, pat: null, transf: [], serie: null, mod: null, suma: 0 };
   const t0 = args[0];
-  if (!t0) { err('«ritmo» necesita un patrón: euclides(k), golpes x..x, todos'); return null; }
+  if (!t0) { err('«ritmo» necesita un patrón: euclides(k), golpes x..x, todos o una serie'); return null; }
   const tn = normalizar(t0);
   let i, m;
+  const leerSerie = (tok, gen, siguiente) => {
+    const s = parsearSerie(tok);
+    if (!s) { err(`«${tok || ''}» no es una serie (${Object.keys(SERIES).join(', ')})`); return false; }
+    if (s.error) { err(s.error); return false; }
+    r.gen = gen; r.serie = s; i = siguiente;
+    return true;
+  };
   if ((m = /^(?:euclides|euc)\((\d+)(?:,(\d+))?\)$/.exec(tn))) {
     r.gen = 'euclides'; r.k = Number(m[1]); r.n = m[2] != null ? Number(m[2]) : null; i = 1;
     if (r.n != null && (r.n < 1 || r.n > 128)) { err('euclides(k,n): n debe estar entre 1 y 128'); return null; }
@@ -389,25 +613,43 @@ function parsearRitmo(args, err) {
   } else if (/^[xX.\-_|]+$/.test(t0)) {
     r.gen = 'golpes'; r.pat = parsearGolpes(t0); i = 1;
     if (!r.pat) { err('patrón de golpes vacío'); return null; }
-  } else { err(`no reconozco el patrón «${t0}»; usa euclides(k), euclides(k,n), golpes x..x o todos`); return null; }
+  } else if (tn === 'serie') { if (!leerSerie(args[1], 'serie', 2)) return null; }
+  else if (tn === 'duraciones') { if (!leerSerie(args[1], 'duraciones', 2)) return null; }
+  else if (parsearSerie(t0)) { if (!leerSerie(t0, 'serie', 1)) return null; }
+  else { err(`no reconozco el patrón «${t0}»; usa euclides(k), golpes x..x, todos, una serie o duraciones serie`); return null; }
+  const esSerie = r.gen === 'serie' || r.gen === 'duraciones';
   while (i < args.length) {
     const t = normalizar(args[i]);
     if (t === 'rotar') {
       const n = entero(args[i + 1]);
       if (Number.isNaN(n)) { err('«rotar» necesita un entero'); return null; }
       r.transf.push({ tipo: 'rotar', n }); i += 2;
-    } else if (t === 'invertir' || t === 'retrogrado') { r.transf.push({ tipo: t }); i += 1; }
-    else { err(`no reconozco la transformación «${args[i]}» (rotar n, invertir, retrógrado)`); return null; }
+    } else if (t === 'invertir' || t === 'retrogrado') {
+      if (t === 'retrogrado' && esSerie) { err('«retrógrado» no se aplica a una serie infinita'); return null; }
+      r.transf.push({ tipo: t }); i += 1;
+    } else if ((t === 'mod' || t === 'suma') && esSerie) {
+      i = leerModSuma(r, t, args, i, err);
+      if (i < 0) return null;
+    } else {
+      err(`no reconozco «${args[i]}» en ritmo (rotar n, invertir, retrógrado${esSerie ? ', mod n, suma n' : ''})`);
+      return null;
+    }
+  }
+  if (esSerie) {
+    if (SERIES[r.serie.nombre].crece && !r.mod) { err(errorSerieSinMod(r.serie) + (r.gen === 'serie' ? '; con mod 2 cada valor es golpe o silencio' : '')); return null; }
+    r.desplaza = r.transf.filter(t => t.tipo === 'rotar').reduce((a, t) => a + t.n, 0);
+    r.invertido = r.transf.filter(t => t.tipo === 'invertir').length % 2 === 1;
   }
   return r;
 }
 
 function parsearGrados(args, err) {
-  const toks = args.flatMap(t => t.split(',')).filter(Boolean);
+  const toks = args.flatMap(t => (t.includes('(') ? [t] : t.split(','))).filter(Boolean);
   const g = { tipo: null, valores: null, serie: null, mod: null, suma: 0 };
   let i = 0;
-  const t0 = normalizar(toks[0] || '');
-  if (Object.prototype.hasOwnProperty.call(SERIES, t0)) { g.tipo = 'serie'; g.serie = t0; i = 1; }
+  const s = parsearSerie(toks[0]);
+  if (s && s.error) { err(s.error); return null; }
+  if (s) { g.tipo = 'serie'; g.serie = s; i = 1; }
   else {
     const vals = [];
     while (i < toks.length && /^-?\d+$/.test(toks[i])) vals.push(Number(toks[i++]));
@@ -416,16 +658,10 @@ function parsearGrados(args, err) {
   }
   while (i < toks.length) {
     const k = normalizar(toks[i]);
-    const v = entero(toks[i + 1]);
-    if (k === 'mod') {
-      if (!(v >= 1)) { err('«mod» necesita un entero ≥ 1'); return null; }
-      g.mod = v; i += 2;
-    } else if (k === 'suma') {
-      if (Number.isNaN(v)) { err('«suma» necesita un entero'); return null; }
-      g.suma = v; i += 2;
-    } else { err(`no reconozco «${toks[i]}» en grados (usa mod n, suma n)`); return null; }
+    if (k === 'mod' || k === 'suma') { i = leerModSuma(g, k, toks, i, err); if (i < 0) return null; }
+    else { err(`no reconozco «${toks[i]}» en grados (usa mod n, suma n)`); return null; }
   }
-  if (g.tipo === 'serie' && !g.mod) { err(`la serie «${g.serie}» crece sin límite: añade «mod n»`); return null; }
+  if (g.tipo === 'serie' && SERIES[g.serie.nombre].crece && !g.mod) { err(errorSerieSinMod(g.serie)); return null; }
   return g;
 }
 
@@ -472,12 +708,23 @@ function parsear(texto) {
           const max = tipo === 'edo' ? 96 : 53;
           if (!(n >= 1 && n <= max)) err(`«afinación ${tipo}» espera un entero entre 1 y ${max}`);
           else p.afinacion = { tipo, n };
+        } else if (tipo === 'generador') {
+          const t = normalizar(args[1] || '');
+          const r = t === 'phi' || t === 'φ' ? PHI : numero(args[1]);
+          const n = args[2] == null ? 12 : entero(args[2]);
+          if (!(r > 0) || Math.abs(Math.log2(r) - Math.round(Math.log2(r))) < 1e-9) err('«afinación generador r n»: r es una razón como 3/2, 7/4 o phi, que no sea una octava');
+          else if (!(n >= 1 && n <= 53)) err('«afinación generador r n»: n entre 1 y 53');
+          else p.afinacion = { tipo: 'generador', r, n, nombre: args[1] };
+        } else if (tipo === 'stern') {
+          const n = args[1] == null ? 7 : entero(args[1]);
+          if (!(n >= 1 && n <= 64)) err('«afinación stern n»: n entre 1 y 64');
+          else p.afinacion = { tipo: 'stern', n };
         } else if (tipo === 'razones' || tipo === 'cents') {
           const vals = args.slice(1).flatMap(t => t.split(',')).filter(Boolean).map(numero);
           if (!vals.length || vals.some(v => Number.isNaN(v) || (tipo === 'razones' && v <= 0))) {
             err(`«afinación ${tipo}» espera una lista de ${tipo === 'razones' ? 'razones como 1/1 9/8 3/2' : 'valores en cents'}`);
           } else p.afinacion = { tipo, valores: vals };
-        } else err('afinación: usa edo n, pitagórica n, razones a/b… o cents c…');
+        } else err('afinación: usa edo n, pitagórica n, generador r n, stern n, razones a/b… o cents c…');
       } else if (clave === 'compas') {
         const cs = [];
         let ok = args.length > 0;
@@ -590,6 +837,18 @@ function parsear(texto) {
       }
     }
   }
+  for (const v of p.voces) {
+    for (const s of [v.ritmo && v.ritmo.serie, v.grados && v.grados.serie]) {
+      if (!s || s.nombre !== 'automata') continue;
+      const [regla, ancho] = s.args;
+      let viva = false;
+      for (let k = 0; k < ancho * 2 * ancho; k += ancho) {
+        viva = false;
+        for (let i = 0; i < ancho; i++) if (automata(regla, ancho, 0, k + i)) { viva = true; break; }
+        if (!viva) { avisos.push({ linea: v.linea, msg: `la regla ${regla} con ancho ${ancho} se apaga en la generación ${k / ancho}: prueba un ancho impar` }); break; }
+      }
+    }
+  }
   if (!p.voces.length && !errores.length) avisos.push({ linea: 0, msg: 'la partitura no tiene voces' });
   p.ratios = ratiosAfinacion(p.afinacion);
   return { partitura: errores.length ? null : p, errores, avisos };
@@ -660,7 +919,40 @@ function crearCursor(p, linea, vi, c0) {
     return pt;
   };
   const r = voz.ritmo;
+  let multDur = 1;               // en «duraciones», la nota dura d pasos
+  const nivelSerie = idx => {
+    let v = valorSerie(r.serie, idx, r.mod);
+    if (r.mod) v = mod(v, r.mod);
+    v += r.suma;
+    return v === 0 ? 0 : Math.abs(v) >= 2 ? 2 : 1;
+  };
+  // ataques de «duraciones»: posición → duración, extendidos a medida que hace falta
+  const ataques = new Map();
+  let sigAtaque = 0, kDur = 0;
+  const duracionEn = idx => {
+    while (sigAtaque <= idx) {
+      let v = valorSerie(r.serie, kDur++, r.mod);
+      if (r.mod) v = mod(v, r.mod);
+      const d = Math.min(256, Math.max(1, Math.abs(Math.round(v + r.suma))));
+      ataques.set(sigAtaque, d);
+      sigAtaque += d;
+    }
+    return ataques.get(idx) || 0;
+  };
   const golpe = (g, nMarco, pMarco) => {
+    multDur = 1;
+    if (r.gen === 'serie') {
+      const idx = g - r.desplaza;
+      const nivel = idx < 0 ? 0 : nivelSerie(idx);
+      return r.invertido ? (nivel ? 0 : 1) : nivel;
+    }
+    if (r.gen === 'duraciones') {
+      const idx = g - r.desplaza;
+      const d = idx < 0 ? 0 : duracionEn(idx);
+      if (r.invertido) return d ? 0 : 1;
+      multDur = d || 1;
+      return d ? 1 : 0;
+    }
     if (r.gen === 'todos') return 1;
     if (r.gen === 'golpes') { const pt = patron(r.pat.length); return pt[mod(g, pt.length)]; }
     if (r.n != null) return patron(r.n)[mod(g, r.n)];
@@ -697,7 +989,7 @@ function crearCursor(p, linea, vi, c0) {
       }
       st.h++;
       out.push({
-        t, dur, c, g, voz: vi, acento: v === 2,
+        t, dur: dur * multDur, c, g, voz: vi, acento: v === 2,
         vel: v === 2 ? Math.min(1, voz.vel * 1.3) : voz.vel,
         grado, freq,
       });
@@ -764,7 +1056,7 @@ function codificarWAV(canales, sr) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    INSTRUMENTOS, SERIES, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
+    INSTRUMENTOS, SERIES, parsearSerie, valorSerie, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
     parsearGolpes, valorGrado, ratiosAfinacion, frecuencia, parsear, crearLinea, crearCursor,
     eventosEntre, cuerdaKS, codificarWAV,
   };
@@ -1098,6 +1390,116 @@ voz tic
   ritmo todos
   prob 0.6
   vol 0.2
+` },
+{ nombre: 'Autoescritura', texto: `# Autoescritura
+# Secuencias que se describen a sí mismas.
+# Kolakoski es igual a la lista de sus rachas: da las duraciones del bajo.
+# Nørgård es autosimilar: cada cuatro notas reaparece la melodía entera.
+# Mira y di (Conway) describe en voz alta el término anterior.
+tempo 100 · semilla 2
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 32
+
+voz bombo
+  ritmo x...
+voz bajo
+  tiempo compás 1/8
+  ritmo duraciones kolakoski   # corta, larga, larga, corta, corta…
+  grados norgard
+  largo 0.95
+voz charles
+  tiempo compás 1/16
+  ritmo thue                   # nunca repite un bloque tres veces
+  entra 3
+voz caja
+  tiempo compás 1/8
+  ritmo serie conway mod 3 rotar 4
+  vol 0.4
+  entra 5
+voz cuerda
+  tiempo compás 1/16
+  ritmo serie conway mod 2
+  grados norgard suma 7
+  octava 1
+  brillo 0.7
+  entra 9 · sale 29
+` },
+{ nombre: 'Autómatas', texto: `# Autómatas
+# Tres voces leen columnas de la misma regla 90 (el triángulo de
+# Sierpinski en un anillo de 17 celdas): comparten la rejilla.
+# Otra lee las filas de la regla 30, que es caótica.
+# La afinación toma las razones más simples de la serie de Stern.
+tempo 116 · semilla 4
+afinación stern 7
+base 55
+compás 4/4
+duración 32
+
+voz bombo
+  ritmo x..x
+voz tom
+  tiempo compás 1/16
+  ritmo automata(90,17,6)
+  grados stern mod 7
+  octava 1
+voz caja
+  tiempo compás 1/16
+  ritmo automata(90,17,13)
+  vol 0.45
+voz cuerda
+  tiempo compás 1/16
+  ritmo automata(90,17,3)
+  grados pascal mod 7
+  octava 2
+  entra 5
+voz charles
+  tiempo compás 1/16
+  ritmo automata(30,17)        # filas de la regla 30
+  vol 0.22
+  entra 9
+voz bajo
+  tiempo compás 1/8
+  ritmo serie pascal mod 2     # Sierpinski leído fila por fila
+  grados 0 0 4 3
+  entra 13
+` },
+{ nombre: 'Del orden al caos', texto: `# Del orden al caos
+# El mapa logístico x → r·x·(1−x) con r subiendo hasta 4:
+# primero un valor fijo, luego ciclos de 2, 4 y 8, al final caos.
+# Recamán y Collatz dan saltos que van y vuelven.
+# Afinación: nueve razones áureas apiladas.
+tempo 126 · semilla 9
+afinación generador phi 9
+base 41.2
+compás 7/8
+duración 40
+
+voz bajo
+  tiempo compás 1/16
+  ritmo euclides(5,14)
+  grados logistico(2.9,4,180) mod 9
+  distorsión 0.4
+voz bombo
+  ritmo euclides(3)
+voz charles
+  tiempo compás 1/16
+  ritmo serie logistico(3.4,4,500) mod 2
+voz caja
+  ritmo euclides(2) rotar 3
+  entra 5
+voz cuerda
+  tiempo bucle 5/16
+  ritmo x.x.x
+  grados recaman mod 9
+  octava 2
+  entra 9
+voz tom
+  tiempo divide 3
+  grados collatz(27) mod 9
+  octava 1
+  entra 17 · sale 37
 ` },
 { nombre: 'Plantilla', texto: `# Plantilla
 tempo 120
@@ -1508,6 +1910,8 @@ function dibujarRegla(p) {
   g.textAlign = 'left';
   const af = p.afinacion;
   const nombre = af.tipo === 'edo' ? `${af.n}-EDO` : af.tipo === 'pitagorica' ? `pitagórica de ${af.n} quintas`
+    : af.tipo === 'generador' ? `generador ${af.nombre} apilado ${af.n} veces`
+    : af.tipo === 'stern' ? `las ${af.n} razones más simples de Stern`
     : af.tipo === 'razones' ? 'razones justas' : 'cents';
   ui.afinTxt.textContent = `${nombre} · ${p.ratios.length} grados por octava · grado 0 = ${p.base} Hz · las marcas grises son 12-EDO`;
 }

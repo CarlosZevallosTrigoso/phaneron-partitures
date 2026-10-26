@@ -1,0 +1,38 @@
+# Autómatas
+# Tres voces leen columnas de la misma regla 90 (el triángulo de
+# Sierpinski en un anillo de 17 celdas): comparten la rejilla.
+# Otra lee las filas de la regla 30, que es caótica.
+# La afinación toma las razones más simples de la serie de Stern.
+tempo 116 · semilla 4
+afinación stern 7
+base 55
+compás 4/4
+duración 32
+
+voz bombo
+  ritmo x..x
+voz tom
+  tiempo compás 1/16
+  ritmo automata(90,17,6)
+  grados stern mod 7
+  octava 1
+voz caja
+  tiempo compás 1/16
+  ritmo automata(90,17,13)
+  vol 0.45
+voz cuerda
+  tiempo compás 1/16
+  ritmo automata(90,17,3)
+  grados pascal mod 7
+  octava 2
+  entra 5
+voz charles
+  tiempo compás 1/16
+  ritmo automata(30,17)        # filas de la regla 30
+  vol 0.22
+  entra 9
+voz bajo
+  tiempo compás 1/8
+  ritmo serie pascal mod 2     # Sierpinski leído fila por fila
+  grados 0 0 4 3
+  entra 13

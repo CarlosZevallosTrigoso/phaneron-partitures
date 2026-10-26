@@ -1,0 +1,34 @@
+# Autoescritura
+# Secuencias que se describen a sí mismas.
+# Kolakoski es igual a la lista de sus rachas: da las duraciones del bajo.
+# Nørgård es autosimilar: cada cuatro notas reaparece la melodía entera.
+# Mira y di (Conway) describe en voz alta el término anterior.
+tempo 100 · semilla 2
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 32
+
+voz bombo
+  ritmo x...
+voz bajo
+  tiempo compás 1/8
+  ritmo duraciones kolakoski   # corta, larga, larga, corta, corta…
+  grados norgard
+  largo 0.95
+voz charles
+  tiempo compás 1/16
+  ritmo thue                   # nunca repite un bloque tres veces
+  entra 3
+voz caja
+  tiempo compás 1/8
+  ritmo serie conway mod 3 rotar 4
+  vol 0.4
+  entra 5
+voz cuerda
+  tiempo compás 1/16
+  ritmo serie conway mod 2
+  grados norgard suma 7
+  octava 1
+  brillo 0.7
+  entra 9 · sale 29
