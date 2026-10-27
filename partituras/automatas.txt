@@ -20,7 +20,7 @@ voz caja
   tiempo compás 1/16
   ritmo automata(90,17,13)
   vol 0.45
-voz cuerda
+voz campanas metal
   tiempo compás 1/16
   ritmo automata(90,17,3)
   grados pascal mod 7

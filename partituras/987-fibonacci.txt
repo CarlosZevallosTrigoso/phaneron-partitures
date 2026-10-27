@@ -28,3 +28,9 @@ voz cuerda
   grados fib mod 7 suma 2
   octava 2
   entra 10 · sale 22
+voz colchon pad
+  tiempo divide 1            # una nota por compás
+  grados fib mod 7
+  octava 1
+  largo 1.1
+  entra 13

@@ -185,12 +185,21 @@ button:disabled { opacity: 0.4; cursor: default; }
 
       <h2>Voces</h2>
       <dl>
-        <dt>voz nombre [instrumento]</dt><dd>Abre una voz; las líneas siguientes le pertenecen. Instrumentos: bombo, caja, charles, tom, bajo, cuerda, seno. Si el nombre es un instrumento, no hace falta repetirlo.</dd>
+        <dt>voz nombre [instrumento]</dt><dd>Abre una voz; las líneas siguientes le pertenecen. Si el nombre es un instrumento, no hace falta repetirlo.</dd>
         <dt>tiempo compás</dt><dd>Un paso por cada unidad del compás (corcheas en 9/8). Es el modo por defecto. <code>tiempo compás 1/16</code> usa semicorcheas.</dd>
         <dt>tiempo divide 5</dt><dd>Divide cada compás en n partes iguales: tresillos, quintillos, polirritmos.</dd>
         <dt>tiempo bucle 7/16</dt><dd>Bucle de n pasos de 1/d que ignora los compases: polimetría.</dd>
         <dt>entra 5 · sale 21</dt><dd>Compás en que la voz empieza y compás en que calla.</dd>
         <dt>silencio</dt><dd>Apaga la voz sin borrarla.</dd>
+      </dl>
+
+      <h2>Instrumentos</h2>
+      <dl>
+        <dt>bombo · caja · charles · tom</dt><dd>Batería sintética. El bombo baja hasta 38 Hz con algo de saturación; el charles suma seis osciladores cuadrados inarmónicos, como las cajas de ritmo analógicas; el tom toma altura de los grados.</dd>
+        <dt>bajo</dt><dd>Sierra, cuadrada y seno a la misma altura con ataque de púa, por un ampli en paralelo: el grave pasa limpio y los medios se saturan y pasan por un gabinete. <code>distorsión</code> regula el empuje y <code>brillo</code> el realce de medios.</dd>
+        <dt>pad</dt><dd>Dos sierras desafinadas y un triángulo con filtro resonante que se abre despacio y vibrato tardío. Pensado para notas largas (<code>largo</code> 4 por defecto).</dd>
+        <dt>metal</dt><dd>Campana FM: la portadora suena a la altura exacta y la moduladora a √2 le da el timbre metálico. <code>brillo</code> es el índice de modulación.</dd>
+        <dt>cuerda · seno</dt><dd>Cuerda pulsada (Karplus-Strong) y seno puro.</dd>
       </dl>
 
       <h2>Ritmo</h2>
@@ -236,6 +245,8 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>brillo 0.6 · distorsión 0.4</dt><dd>Brillo del filtro o del ruido inicial (0–1) y saturación de la voz (0–1).</dd>
         <dt>largo 1.5</dt><dd>Duración de la nota en pasos (bajo y seno).</dd>
         <dt>prob 0.8</dt><dd>Probabilidad de cada golpe, decidida por la semilla.</dd>
+        <dt>espacio 0.5</dt><dd>Cuánto de la voz va a la sala oscura (una reverberación de 3,2 s). Pad, metal, caja, tom, cuerda y seno ya traen algo.</dd>
+        <dt>desafinar 7 · vibrato 6</dt><dd>Cents entre los osciladores del pad o del bajo, repartidos hacia arriba y hacia abajo de la altura exacta, y profundidad del vibrato tardío. En 0, la afinación queda pura.</dd>
       </dl>
       <p>Los cambios que aplicas con Evaluar mientras suena entran al comienzo del compás siguiente; los grados de cada voz vuelven a empezar desde ahí.</p>
     </details>
@@ -249,22 +260,27 @@ button:disabled { opacity: 0.4; cursor: default; }
    ========================================================================== */
 
 /* ---------- instrumentos: valores por defecto ---------- */
+/* espacio: envío a la sala (0–1) · desafinar: cents entre osciladores, simétrico
+   alrededor de la altura exacta · vibrato: profundidad en cents */
 const INSTRUMENTOS = {
-  bombo:   { vol: 0.9,  decae: 0.45, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: false },
-  caja:    { vol: 0.55, decae: 0.18, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: false },
-  charles: { vol: 0.3,  decae: 0.05, brillo: 0.7,  distorsion: 0,    largo: 1,   melodico: false },
-  tom:     { vol: 0.6,  decae: 0.35, brillo: 0.5,  distorsion: 0,    largo: 1,   melodico: true  },
-  bajo:    { vol: 0.35, decae: 0.08, brillo: 0.35, distorsion: 0.35, largo: 0.9, melodico: true  },
-  cuerda:  { vol: 0.6,  decae: 2.5,  brillo: 0.6,  distorsion: 0,    largo: 1,   melodico: true  },
-  seno:    { vol: 0.45, decae: 0.08, brillo: 0.5,  distorsion: 0,    largo: 0.9, melodico: true  },
+  bombo:   { vol: 0.9,  decae: 0.6,  brillo: 0.4,  distorsion: 0.12, largo: 1,   espacio: 0,    desafinar: 0, vibrato: 0, melodico: false },
+  caja:    { vol: 0.55, decae: 0.22, brillo: 0.4,  distorsion: 0,    largo: 1,   espacio: 0.18, desafinar: 0, vibrato: 0, melodico: false },
+  charles: { vol: 0.3,  decae: 0.05, brillo: 0.5,  distorsion: 0,    largo: 1,   espacio: 0,    desafinar: 0, vibrato: 0, melodico: false },
+  tom:     { vol: 0.6,  decae: 0.4,  brillo: 0.4,  distorsion: 0,    largo: 1,   espacio: 0.2,  desafinar: 0, vibrato: 0, melodico: true  },
+  bajo:    { vol: 0.32, decae: 0.08, brillo: 0.3,  distorsion: 0.45, largo: 0.9, espacio: 0,    desafinar: 0, vibrato: 0, melodico: true  },
+  cuerda:  { vol: 0.6,  decae: 2.5,  brillo: 0.45, distorsion: 0,    largo: 1,   espacio: 0.2,  desafinar: 0, vibrato: 0, melodico: true  },
+  seno:    { vol: 0.45, decae: 0.08, brillo: 0.5,  distorsion: 0,    largo: 0.9, espacio: 0.15, desafinar: 0, vibrato: 0, melodico: true  },
+  pad:     { vol: 0.4,  decae: 1.4,  brillo: 0.35, distorsion: 0,    largo: 4,   espacio: 0.55, desafinar: 7, vibrato: 6, melodico: true  },
+  metal:   { vol: 0.4,  decae: 2.2,  brillo: 0.35, distorsion: 0,    largo: 1,   espacio: 0.4,  desafinar: 0, vibrato: 0, melodico: true  },
 };
 const ALIAS_INSTR = {
   hihat: 'charles', hat: 'charles', platillo: 'charles', kick: 'bombo', snare: 'caja',
   bass: 'bajo', guitarra: 'cuerda', pluck: 'cuerda', sine: 'seno',
+  colchon: 'pad', cs80: 'pad', campana: 'metal', campanas: 'metal', fm: 'metal',
 };
 const PARAMS_NUM = {
   vol: [0, 1.5], pan: [-1, 1], decae: [0.01, 10], brillo: [0, 1], distorsion: [0, 1],
-  largo: [0.05, 16], prob: [0, 1], vel: [0, 1],
+  largo: [0.05, 16], prob: [0, 1], vel: [0, 1], espacio: [0, 1], desafinar: [0, 50], vibrato: [0, 100],
 };
 
 /* ---------- utilidades ---------- */
@@ -825,6 +841,9 @@ function parsear(texto) {
     v.largo = v.params.largo ?? def.largo;
     v.prob = v.params.prob ?? 1;
     v.vel = v.params.vel ?? 0.8;
+    v.espacio = v.params.espacio ?? def.espacio;
+    v.desafinar = v.params.desafinar ?? def.desafinar;
+    v.vibrato = v.params.vibrato ?? def.vibrato;
     v.melodico = def.melodico;
     if (v.grados && !def.melodico) avisos.push({ linea: v.linea, msg: `«${v.instr}» no tiene altura: se ignoran sus grados` });
     if (v.entra && v.sale && v.sale <= v.entra) errores.push({ linea: v.linea, msg: '«sale» debe ser mayor que «entra»' });
@@ -1070,6 +1089,8 @@ if (typeof module !== 'undefined' && module.exports) {
    Usa del motor: mulberry32, azar, cuerdaKS, crearLinea, eventosEntre.
    ========================================================================== */
 
+const SALA_SEG = 3.2;   // cola de la sala oscura, en segundos
+
 function crearRecursos(ctx, semilla) {
   const sr = ctx.sampleRate;
   const ruido = ctx.createBuffer(1, sr, sr);
@@ -1084,7 +1105,12 @@ function curvaDistorsion(k) {
   for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = ((1 + a) * x) / (1 + a * Math.abs(x)); }
   return c;
 }
-
+/** Saturación simétrica tipo válvula; el empuje previo decide cuánto satura. */
+function curvaSaturacion() {
+  const n = 4096, c = new Float32Array(n), k = Math.tanh(2.5);
+  for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = Math.tanh(2.5 * x) / k; }
+  return c;
+}
 /** Lineal hasta 0.7 y luego rodilla suave: el pico nunca pasa de ~0.92. */
 function curvaLimitador() {
   const n = 4096, c = new Float32Array(n);
@@ -1095,7 +1121,28 @@ function curvaLimitador() {
   return c;
 }
 
-/** Mezcla: ganancia → compresor (aplica ganancia de compensación propia) → limitador suave. */
+/**
+ * Respuesta al impulso de una sala oscura: ruido estéreo determinista con
+ * caída exponencial (−60 dB en «seg») que pierde agudos a medida que decae.
+ */
+function respuestaSala(ctx, seg) {
+  const sr = ctx.sampleRate, n = Math.ceil(seg * sr), pre = Math.round(0.018 * sr);
+  const buf = ctx.createBuffer(2, n, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    const rnd = mulberry32(0x5a1a + ch * 7919);
+    let lp = 0;
+    for (let i = pre; i < n; i++) {
+      const tt = (i - pre) / sr;
+      const a = 0.5 * Math.exp(-tt / (seg * 0.3)) + 0.035;
+      lp += a * (rnd() * 2 - 1 - lp);
+      d[i] = lp * Math.exp((-6.9 * tt) / seg);
+    }
+  }
+  return buf;
+}
+
+/** Mezcla: sala → ganancia → compresor (con compensación propia) → limitador suave. */
 function crearMezcla(ctx, destino) {
   const entrada = ctx.createGain();
   entrada.gain.value = 0.42;
@@ -1108,14 +1155,49 @@ function crearMezcla(ctx, destino) {
   entrada.connect(comp);
   comp.connect(lim);
   lim.connect(destino);
-  return { entrada, comp, lim };
+  const sala = ctx.createConvolver();
+  sala.normalize = true;
+  sala.buffer = respuestaSala(ctx, SALA_SEG);
+  sala.connect(entrada);
+  return { entrada, comp, lim, sala };
 }
 
-/** Cadena por voz: entrada → [distorsión] → volumen → [paneo] → mezcla. */
+/**
+ * Ampli del bajo en paralelo: el grave pasa limpio por debajo de ~150 Hz y
+ * los medios se saturan, se realzan y pasan por un gabinete. Así el bajo
+ * gruñe sin perder el fundamento.
+ */
+function cadenaBajo(ctx, entrada, voz) {
+  const biquad = (tipo, f, q, gan) => {
+    const b = ctx.createBiquadFilter();
+    b.type = tipo; b.frequency.value = f; b.Q.value = q;
+    if (gan != null) b.gain.value = gan;
+    return b;
+  };
+  const limpio = biquad('lowpass', 150, 0.7);
+  const pre = biquad('highpass', 120, 0.7);
+  const empuje = ctx.createGain();
+  empuje.gain.value = 1 + voz.distorsion * 14;
+  const sat = ctx.createWaveShaper();
+  sat.curve = curvaSaturacion();
+  sat.oversample = '4x';
+  const medios = biquad('peaking', 650 + 700 * voz.brillo, 1.2, 6);
+  const gabinete = biquad('lowpass', 1800 + 3500 * voz.brillo, 0.8);
+  const nivel = ctx.createGain();
+  nivel.gain.value = 0.45;
+  const suma = ctx.createGain();
+  entrada.connect(limpio); limpio.connect(suma);
+  entrada.connect(pre); pre.connect(empuje); empuje.connect(sat); sat.connect(medios);
+  medios.connect(gabinete); gabinete.connect(nivel); nivel.connect(suma);
+  return suma;
+}
+
+/** Cadena por voz: entrada → [ampli o distorsión] → volumen → [paneo] → mezcla (+ envío a la sala). */
 function crearBus(ctx, mezcla, voz) {
   const entrada = ctx.createGain();
   let nodo = entrada;
-  if (voz.distorsion > 0) {
+  if (voz.instr === 'bajo') nodo = cadenaBajo(ctx, entrada, voz);
+  else if (voz.distorsion > 0) {
     const ws = ctx.createWaveShaper();
     ws.curve = curvaDistorsion(voz.distorsion);
     ws.oversample = '4x';
@@ -1133,6 +1215,11 @@ function crearBus(ctx, mezcla, voz) {
     vol.connect(pn); salida = pn;
   }
   salida.connect(mezcla.entrada);
+  if (voz.espacio > 0 && mezcla.sala) {
+    const envio = ctx.createGain();
+    envio.gain.value = voz.espacio;
+    salida.connect(envio); envio.connect(mezcla.sala);
+  }
   return entrada;
 }
 
@@ -1158,66 +1245,106 @@ function fuenteRuido(ctx, rec, ev, t, dur) {
   s.start(t, offset, dur);
   return s;
 }
+function oscilador(ctx, tipo, f, cents) {
+  const o = ctx.createOscillator();
+  o.type = tipo; o.frequency.value = f;
+  if (cents) o.detune.value = cents;
+  return o;
+}
+/** Vibrato tardío: entra a los 0,35 s y llega a «cents» al segundo, como al apoyar el dedo. */
+function vibrar(ctx, oscs, t, cents, fin) {
+  if (!cents) return;
+  const lfo = oscilador(ctx, 'sine', 5.2);
+  const prof = ctx.createGain();
+  prof.gain.setValueAtTime(0, t);
+  prof.gain.setValueAtTime(0, t + 0.35);
+  prof.gain.linearRampToValueAtTime(cents, t + 1);
+  lfo.connect(prof);
+  for (const o of oscs) prof.connect(o.detune);
+  lfo.start(t); lfo.stop(fin + 0.05);
+}
+const ALTURAS_METALICAS = [205.3, 304.4, 369.6, 522.7, 540, 800];
 
 const SINTES = {
   bombo(ctx, bus, ev, voz, rec, t) {
-    const o = ctx.createOscillator();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(140 + 140 * voz.brillo, t);
-    o.frequency.exponentialRampToValueAtTime(44, t + 0.1);
+    const o = oscilador(ctx, 'sine', 100);
+    o.frequency.setValueAtTime(100 + 120 * voz.brillo, t);
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.13);
     const g = ctx.createGain();
     envolvente(g, t, ev.vel, 0.002, voz.decae);
     o.connect(g); g.connect(bus);
     o.start(t); o.stop(t + voz.decae + 0.05);
+    const n = fuenteRuido(ctx, rec, ev, t, 0.02);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 2500;
+    const gc = ctx.createGain();
+    envolvente(gc, t, ev.vel * 0.25, 0.0005, 0.006);
+    n.connect(hp); hp.connect(gc); gc.connect(bus);
   },
   caja(ctx, bus, ev, voz, rec, t) {
     const n = fuenteRuido(ctx, rec, ev, t, voz.decae + 0.05);
     const bp = ctx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 1500 + 2500 * voz.brillo; bp.Q.value = 0.8;
+    bp.type = 'bandpass'; bp.frequency.value = 900 + 1800 * voz.brillo; bp.Q.value = 0.7;
     const gn = ctx.createGain();
-    envolvente(gn, t, ev.vel * 1.4, 0.001, voz.decae);
+    envolvente(gn, t, ev.vel * 1.5, 0.001, voz.decae);
     n.connect(bp); bp.connect(gn); gn.connect(bus);
-    const o = ctx.createOscillator();
-    o.type = 'triangle';
-    o.frequency.setValueAtTime(230, t);
-    o.frequency.exponentialRampToValueAtTime(170, t + 0.05);
+    const o = oscilador(ctx, 'triangle', 190);
+    o.frequency.setValueAtTime(190, t);
+    o.frequency.exponentialRampToValueAtTime(145, t + 0.06);
     const go = ctx.createGain();
-    envolvente(go, t, ev.vel * 0.7, 0.001, 0.07);
+    envolvente(go, t, ev.vel * 0.8, 0.001, 0.09);
     o.connect(go); go.connect(bus);
-    o.start(t); o.stop(t + 0.12);
+    o.start(t); o.stop(t + 0.14);
   },
+  /** Seis osciladores cuadrados inarmónicos filtrados: el metal de las cajas de ritmo analógicas. */
   charles(ctx, bus, ev, voz, rec, t) {
-    const dur = voz.decae * (ev.acento ? 2.5 : 1);
-    const n = fuenteRuido(ctx, rec, ev, t, dur + 0.03);
+    const dur = voz.decae * (ev.acento ? 3 : 1);
+    const suma = ctx.createGain();
+    suma.gain.value = 1;
+    const escala = 0.85 + 0.3 * voz.brillo;
+    for (const f of ALTURAS_METALICAS) {
+      const o = oscilador(ctx, 'square', f * escala);
+      o.connect(suma); o.start(t); o.stop(t + dur + 0.05);
+    }
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 7000 + 3000 * voz.brillo; bp.Q.value = 0.9;
     const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 5000 + 4000 * voz.brillo;
+    hp.type = 'highpass'; hp.frequency.value = 6500;
     const g = ctx.createGain();
-    envolvente(g, t, ev.vel, 0.001, dur);
-    n.connect(hp); hp.connect(g); g.connect(bus);
+    envolvente(g, t, ev.vel * 2, 0.001, dur);
+    suma.connect(bp); bp.connect(hp); hp.connect(g); g.connect(bus);
   },
   tom(ctx, bus, ev, voz, rec, t) {
-    const o = ctx.createOscillator();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(ev.freq * 1.6, t);
+    const o = oscilador(ctx, 'sine', ev.freq);
+    o.frequency.setValueAtTime(ev.freq * 1.4, t);
     o.frequency.exponentialRampToValueAtTime(ev.freq, t + 0.06);
     const g = ctx.createGain();
     envolvente(g, t, ev.vel, 0.002, voz.decae);
     o.connect(g); g.connect(bus);
     o.start(t); o.stop(t + voz.decae + 0.05);
   },
+  /** Sierra, cuadrada y seno a la misma altura; el filtro se cierra tras el ataque de púa. El ampli está en el bus. */
   bajo(ctx, bus, ev, voz, rec, t) {
     const largo = ev.dur * voz.largo;
-    const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = ev.freq;
-    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = ev.freq;   // sin desafinar: los microtonos tienen que oírse limpios
+    const d = voz.desafinar / 2;
+    const sierra = oscilador(ctx, 'sawtooth', ev.freq, d);
+    const cuadrada = oscilador(ctx, 'square', ev.freq, -d);
+    const sub = oscilador(ctx, 'sine', ev.freq);
     const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.Q.value = 4;
-    const tope = Math.min(ctx.sampleRate * 0.45, 120 * Math.pow(2, voz.brillo * 7));
-    lp.frequency.setValueAtTime(tope, t);
-    lp.frequency.exponentialRampToValueAtTime(Math.max(60, tope * 0.25), t + Math.max(0.06, largo));
+    lp.type = 'lowpass'; lp.Q.value = 2.5;
+    const nyq = ctx.sampleRate * 0.45;
+    const tope = Math.min(nyq, 150 * Math.pow(2, voz.brillo * 6));
+    lp.frequency.setValueAtTime(Math.min(nyq, Math.max(2500, tope * 3)), t);
+    lp.frequency.exponentialRampToValueAtTime(tope, t + 0.07);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(80, tope * 0.5), t + Math.max(0.1, largo));
+    const gc = ctx.createGain(); gc.gain.value = 0.6;
+    const gs = ctx.createGain(); gs.gain.value = 0.6;
     const g = ctx.createGain();
-    const fin = envolventeNota(g, t, ev.vel * 0.5, 0.004, largo, voz.decae);
-    o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(bus);
-    o1.start(t); o2.start(t); o1.stop(fin + 0.02); o2.stop(fin + 0.02);
+    const fin = envolventeNota(g, t, ev.vel * 0.45, 0.003, largo, voz.decae);
+    sierra.connect(lp); cuadrada.connect(gc); gc.connect(lp); lp.connect(g);
+    sub.connect(gs); gs.connect(g); g.connect(bus);
+    for (const o of [sierra, cuadrada, sub]) { o.start(t); o.stop(fin + 0.02); }
+    vibrar(ctx, [sierra, cuadrada, sub], t, voz.vibrato, fin);
   },
   cuerda(ctx, bus, ev, voz, rec, t) {
     const variante = Math.floor(azar(rec.semilla, 'ks', ev.voz, ev.g) * 3);
@@ -1237,12 +1364,56 @@ const SINTES = {
     s.start(t);
   },
   seno(ctx, bus, ev, voz, rec, t) {
-    const o = ctx.createOscillator();
-    o.type = 'sine'; o.frequency.value = ev.freq;
+    const o = oscilador(ctx, 'sine', ev.freq);
     const g = ctx.createGain();
     const fin = envolventeNota(g, t, ev.vel * 0.6, 0.01, ev.dur * voz.largo, voz.decae);
     o.connect(g); g.connect(bus);
     o.start(t); o.stop(fin + 0.02);
+    vibrar(ctx, [o], t, voz.vibrato, fin);
+  },
+  /**
+   * Pad de sintetizador analógico polifónico: dos sierras desafinadas en
+   * simetría y un triángulo, filtro paso bajo resonante que se abre despacio,
+   * paso alto para limpiar el barro y vibrato tardío.
+   */
+  pad(ctx, bus, ev, voz, rec, t) {
+    const largo = ev.dur * voz.largo;
+    const ataque = Math.min(0.9, Math.max(0.05, largo * 0.3));
+    const d = voz.desafinar / 2;
+    const s1 = oscilador(ctx, 'sawtooth', ev.freq, d);
+    const s2 = oscilador(ctx, 'sawtooth', ev.freq, -d);
+    const tri = oscilador(ctx, 'triangle', ev.freq);
+    const gt = ctx.createGain(); gt.gain.value = 0.5;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 3.5;
+    const pico = Math.min(ctx.sampleRate * 0.45, 180 * Math.pow(2, voz.brillo * 5.5));
+    lp.frequency.setValueAtTime(110, t);
+    lp.frequency.exponentialRampToValueAtTime(pico, t + ataque * 1.3);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(120, pico * 0.55), t + ataque * 1.3 + Math.max(0.2, largo * 0.6));
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 70; hp.Q.value = 0.7;
+    const g = ctx.createGain();
+    const fin = envolventeNota(g, t, ev.vel * 0.32, ataque, largo, voz.decae);
+    s1.connect(lp); s2.connect(lp); tri.connect(gt); gt.connect(lp);
+    lp.connect(hp); hp.connect(g); g.connect(bus);
+    for (const o of [s1, s2, tri]) { o.start(t); o.stop(fin + 0.02); }
+    vibrar(ctx, [s1, s2, tri], t, voz.vibrato, fin);
+  },
+  /** Campana FM: portadora a la altura exacta, moduladora a √2 (inarmónica) con índice que se apaga. */
+  metal(ctx, bus, ev, voz, rec, t) {
+    const car = oscilador(ctx, 'sine', ev.freq);
+    const moduladora = oscilador(ctx, 'sine', ev.freq * Math.SQRT2);
+    const indice = ctx.createGain();
+    const I = ev.freq * (0.4 + 4.5 * voz.brillo);
+    indice.gain.setValueAtTime(I, t);
+    indice.gain.exponentialRampToValueAtTime(Math.max(0.5, I * 0.03), t + voz.decae * 0.8);
+    moduladora.connect(indice); indice.connect(car.frequency);
+    const g = ctx.createGain();
+    envolvente(g, t, ev.vel * 1.1, 0.002, voz.decae);
+    car.connect(g); g.connect(bus);
+    const fin = t + voz.decae + 0.05;
+    car.start(t); moduladora.start(t); car.stop(fin); moduladora.stop(fin);
+    vibrar(ctx, [car], t, voz.vibrato, fin);
   },
 };
 
@@ -1262,7 +1433,8 @@ function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
   const linea = crearLinea(p);
   const nComp = p.duracion || compasesSinDuracion;
   const tFin = linea.inicio(nComp);
-  const cola = Math.max(0.5, ...p.voces.map(v => v.decae)) + 0.3;
+  const sala = p.voces.some(v => v.espacio > 0 && !v.silencio) ? SALA_SEG : 0;
+  const cola = Math.max(0.5, sala, ...p.voces.map(v => v.decae)) + 0.3;
   const largo = Math.ceil((tFin + cola) * sr);
   const ctx = new ClaseOffline(2, largo, sr);
   const rec = crearRecursos(ctx, p.semilla);
@@ -1274,7 +1446,7 @@ function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES };
+  module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES, respuestaSala };
 }
 </script>
 <script>
@@ -1311,6 +1483,12 @@ voz cuerda
   grados fib mod 7 suma 2
   octava 2
   entra 10 · sale 22
+voz colchon pad
+  tiempo divide 1            # una nota por compás
+  grados fib mod 7
+  octava 1
+  largo 1.1
+  entra 13
 ` },
 { nombre: 'Cuartos de tono', texto: `# Cuartos de tono
 # 24 divisiones iguales de la octava: el grado 1 es un cuarto de tono.
@@ -1448,7 +1626,7 @@ voz caja
   tiempo compás 1/16
   ritmo automata(90,17,13)
   vol 0.45
-voz cuerda
+voz campanas metal
   tiempo compás 1/16
   ritmo automata(90,17,3)
   grados pascal mod 7
@@ -1489,7 +1667,7 @@ voz charles
 voz caja
   ritmo euclides(2) rotar 3
   entra 5
-voz cuerda
+voz campanas metal
   tiempo bucle 5/16
   ritmo x.x.x
   grados recaman mod 9
@@ -1500,6 +1678,52 @@ voz tom
   grados collatz(27) mod 9
   octava 1
   entra 17 · sale 37
+` },
+{ nombre: 'Neón', texto: `# Neón
+# Pads de filtro lento con vibrato tardío y campanas FM en una sala oscura.
+# Los acordes siguen la serie de Nørgård; las campanas, la palabra de
+# Fibonacci. El bajo entra a mitad de la pieza, saturado.
+tempo 72 · semilla 12
+afinación razones 1/1 16/15 6/5 4/3 3/2 8/5 9/5    # frigio justo
+base 36.7                                         # re grave
+compás 4/4
+duración 24
+
+voz grave pad
+  tiempo divide 1
+  grados 0 0 5 3
+  octava 1
+  largo 1.1
+voz medio pad
+  tiempo divide 1
+  grados norgard suma 4
+  octava 2
+  largo 1.1
+  vol 0.32
+voz alto pad
+  tiempo divide 2
+  grados norgard suma 9
+  octava 2
+  largo 2.2
+  vol 0.24
+  entra 5
+voz campanas metal
+  tiempo compás 1/16
+  ritmo palabrafib
+  prob 0.35
+  grados conway suma 7
+  octava 2
+  entra 3
+voz bajo
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 0 0 5
+  octava 1
+  distorsión 0.6
+  entra 9 · sale 21
+voz bombo
+  ritmo x...
+  entra 9 · sale 21
 ` },
 { nombre: 'Plantilla', texto: `# Plantilla
 tempo 120

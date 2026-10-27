@@ -1,0 +1,45 @@
+# Neón
+# Pads de filtro lento con vibrato tardío y campanas FM en una sala oscura.
+# Los acordes siguen la serie de Nørgård; las campanas, la palabra de
+# Fibonacci. El bajo entra a mitad de la pieza, saturado.
+tempo 72 · semilla 12
+afinación razones 1/1 16/15 6/5 4/3 3/2 8/5 9/5    # frigio justo
+base 36.7                                         # re grave
+compás 4/4
+duración 24
+
+voz grave pad
+  tiempo divide 1
+  grados 0 0 5 3
+  octava 1
+  largo 1.1
+voz medio pad
+  tiempo divide 1
+  grados norgard suma 4
+  octava 2
+  largo 1.1
+  vol 0.32
+voz alto pad
+  tiempo divide 2
+  grados norgard suma 9
+  octava 2
+  largo 2.2
+  vol 0.24
+  entra 5
+voz campanas metal
+  tiempo compás 1/16
+  ritmo palabrafib
+  prob 0.35
+  grados conway suma 7
+  octava 2
+  entra 3
+voz bajo
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 0 0 5
+  octava 1
+  distorsión 0.6
+  entra 9 · sale 21
+voz bombo
+  ritmo x...
+  entra 9 · sale 21

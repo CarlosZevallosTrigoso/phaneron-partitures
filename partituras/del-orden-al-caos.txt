@@ -22,7 +22,7 @@ voz charles
 voz caja
   ritmo euclides(2) rotar 3
   entra 5
-voz cuerda
+voz campanas metal
   tiempo bucle 5/16
   ritmo x.x.x
   grados recaman mod 9

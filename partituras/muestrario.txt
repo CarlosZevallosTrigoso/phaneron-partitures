@@ -1,0 +1,76 @@
+# Muestrario de la paleta oscura
+# Cada instrumento suena solo dos compases; al final, todos juntos.
+tempo 96 · semilla 3
+afinación razones 1/1 16/15 6/5 4/3 3/2 8/5 9/5
+base 41.2
+compás 4/4
+duración 20
+
+voz bombo
+  tiempo compás 1/8
+  ritmo x..x..x.
+  sale 3
+voz caja
+  ritmo .x.X
+  entra 3 · sale 5
+voz charles
+  tiempo compás 1/16
+  ritmo euclides(11,16)
+  entra 5 · sale 7
+voz tom
+  tiempo divide 6
+  grados 4 3 1 0 -2 -3
+  octava 1
+  entra 7 · sale 9
+voz bajo
+  tiempo compás 1/16
+  ritmo X.x.x..x.xx..x.x
+  grados 0 0 1 0 4 3 0 6
+  octava 1
+  distorsión 0.55
+  entra 9 · sale 11
+voz pad
+  tiempo divide 1
+  grados 0 5
+  octava 2
+  largo 1.05
+  entra 11 · sale 13
+voz metal
+  tiempo compás 1/8
+  ritmo x..x.x..
+  grados 7 9 11 8
+  octava 2
+  entra 13 · sale 15
+
+voz b2 bombo
+  tiempo compás 1/8
+  ritmo x..x..x.
+  entra 15
+voz c2 caja
+  ritmo .x.X
+  entra 15
+voz h2 charles
+  tiempo compás 1/16
+  ritmo euclides(11,16)
+  entra 15
+voz bj2 bajo
+  tiempo compás 1/16
+  ritmo X.x.x..x.xx..x.x
+  grados 0 0 1 0 4 3 0 6
+  octava 1
+  distorsión 0.55
+  entra 15
+voz p2 pad
+  tiempo divide 1
+  grados 0 5
+  octava 2
+  largo 1.05
+  vol 0.3
+  entra 15
+voz m2 metal
+  tiempo compás 1/8
+  ritmo x..x.x..
+  grados 7 9 11 8
+  octava 2
+  vol 0.3
+  entra 15

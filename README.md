@@ -4,6 +4,8 @@ Secuenciador en un solo HTML para tocar partituras escritas con criterios matem�
 
 Las voces pueden leer series como ritmo, como duraciones o como alturas: Fibonacci, primos, la serie infinita de Nørgård, Recamán, Collatz, mira y di de Conway, Stern, Thue-Morse, la palabra de Fibonacci, Kolakoski, el triángulo de Pascal, autómatas celulares elementales y el mapa logístico.
 
+Los instrumentos son sintéticos: batería analógica, un bajo con ampli en paralelo (grave limpio, medios saturados), pads de filtro lento con vibrato tardío, campanas FM, cuerda pulsada y seno, con una sala oscura por convolución.
+
 `index.html` no tiene dependencias ni paso de compilación. El audio usa la Web Audio API del navegador y lo que se oye es lo mismo que se exporta en WAV.
 
 ## Partituras
