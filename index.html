@@ -64,6 +64,8 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .transporte button:hover, .archivo button:hover, .archivo select:hover { background: var(--suave); }
 .transporte .primario { background: var(--musgo); border-color: var(--musgo); color: var(--papel); }
 .transporte .primario:hover { background: #4a5a3a; }
+#b-piano[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--papel); }
+#b-piano[aria-pressed="true"]::before { content: "✓ "; }
 button:disabled { opacity: 0.4; cursor: default; }
 .desde { display: inline-flex; align-items: center; gap: 4px; color: var(--tenue); font-size: var(--t-1); }
 .desde input {
@@ -129,6 +131,7 @@ button:disabled { opacity: 0.4; cursor: default; }
       <button type="button" id="b-tocar" class="primario" aria-pressed="false">▶ Tocar</button>
       <button type="button" id="b-parar" disabled>■ Parar</button>
       <button type="button" id="b-evaluar" title="Ctrl o ⌘ + Enter">Evaluar</button>
+      <button type="button" id="b-piano" aria-pressed="false" title="Escribe o quita «instrumento piano» al comienzo de la partitura">Todo piano</button>
       <label class="desde" for="desde">desde el compás <input id="desde" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
     </div>
     <p id="aviso" class="aviso" role="status" aria-live="polite"></p>
@@ -180,12 +183,13 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>afinación generador phi 9</dt><dd>Apila n veces una razón (3/2, 7/4, 11/8, phi…) y la pliega a la octava. La pitagórica es <code>generador 3/2</code>. Por el teorema de las tres distancias, la escala tiene a lo sumo tres tamaños de paso.</dd>
         <dt>afinación stern 7</dt><dd>Las n razones más simples que aparecen entre términos vecinos de la serie de Stern (1/1, 6/5, 5/4, 4/3, 3/2…).</dd>
         <dt>base 55</dt><dd>Frecuencia en Hz del grado 0.</dd>
+        <dt>instrumento piano</dt><dd>Fuera de una voz, todas las voces suenan con ese instrumento mientras la línea esté escrita; al quitarla, cada una vuelve al suyo. El botón «Todo piano» escribe o quita esta línea. Las voces de percusión sin grados pasan a tocar la base en su registro: bombo en la octava 0, caja en la 1 y charles en la 3.</dd>
         <dt>semilla 7</dt><dd>Fija todo lo aleatorio (prob, ruido, cuerda): misma semilla, mismo resultado.</dd>
       </dl>
 
       <h2>Voces</h2>
       <dl>
-        <dt>voz nombre [instrumento]</dt><dd>Abre una voz; las líneas siguientes le pertenecen. Si el nombre es un instrumento, no hace falta repetirlo.</dd>
+        <dt>voz nombre [instrumento]</dt><dd>Abre una voz; las líneas siguientes le pertenecen. Si el nombre es un instrumento, no hace falta repetirlo; si no lo es y no se indica otro, la voz es de piano. Los nombres pueden repetirse: la segunda «voz piano» se llama «piano 2».</dd>
         <dt>tiempo compás</dt><dd>Un paso por cada unidad del compás (corcheas en 9/8). Es el modo por defecto. <code>tiempo compás 1/16</code> usa semicorcheas.</dd>
         <dt>tiempo divide 5</dt><dd>Divide cada compás en n partes iguales: tresillos, quintillos, polirritmos.</dd>
         <dt>tiempo bucle 7/16</dt><dd>Bucle de n pasos de 1/d que ignora los compases: polimetría.</dd>
@@ -284,6 +288,9 @@ const ALIAS_INSTR = {
   colchon: 'pad', cs80: 'pad', campana: 'metal', campanas: 'metal', fm: 'metal',
   pianoforte: 'piano', cola: 'piano',
 };
+
+/** Octava en que suena una voz de percusión cuando toda la partitura pasa a un instrumento con altura. */
+const REGISTRO_PERCUSION = { bombo: 0, caja: 1, charles: 3 };
 
 /* ---------- piano: capas de fuerza ----------
    Fuerza nominal de cada capa grabada (Salamander v2, v6, v10, v14). Una nota
@@ -725,7 +732,7 @@ function parsear(texto) {
   const p = {
     tempo: 120, semilla: 1, base: 110,
     afinacion: { tipo: 'edo', n: 12 }, compases: [{ num: 4, den: 4 }],
-    duracion: null, voces: [], lineaCompas: 0,
+    duracion: null, voces: [], lineaCompas: 0, instrumentoGlobal: null,
   };
   let voz = null;
   const lineas = String(texto).split(/\r?\n/);
@@ -792,11 +799,12 @@ function parsear(texto) {
         const v = entero(args[0]);
         if (!(v >= 1)) err('«duración» es un número de compases ≥ 1'); else p.duracion = v;
       } else if (clave === 'voz') {
-        const nombre = normalizar(args[0] || '');
-        if (!nombre) { err('«voz» necesita un nombre'); voz = null; continue; }
-        if (p.voces.some(v => v.nombre === nombre)) { err(`ya existe una voz llamada «${nombre}»`); voz = null; continue; }
+        const base = normalizar(args[0] || '');
+        if (!base) { err('«voz» necesita un nombre'); voz = null; continue; }
+        let nombre = base;                         // nombres repetidos: piano, piano 2, piano 3…
+        for (let k = 2; p.voces.some(v => v.nombre === nombre); k++) nombre = `${base} ${k}`;
         voz = {
-          nombre, linea: ln, instr: null, lineaInstr: ln,
+          nombre, nombreBase: base, linea: ln, instr: null, instrExplicito: false, octavaDada: false, lineaInstr: ln,
           tiempo: { modo: 'compas', u: null }, lineaTiempo: ln,
           ritmo: { gen: 'todos', transf: [] }, grados: null, octava: 0,
           entra: null, sale: null, silencio: false, pedal: null, lineaPedal: 0, params: {},
@@ -805,14 +813,20 @@ function parsear(texto) {
         if (args[1]) {
           const ins = normalizar(args[1]);
           const r = ALIAS_INSTR[ins] || ins;
-          if (INSTRUMENTOS[r]) voz.instr = r; else err(`no existe el instrumento «${args[1]}»`);
+          if (INSTRUMENTOS[r]) { voz.instr = r; voz.instrExplicito = true; } else err(`no existe el instrumento «${args[1]}»`);
         }
+      } else if (clave === 'instrumento' && !voz) {
+        // fuera de una voz: instrumento de toda la partitura («instrumento piano» = todo piano)
+        const ins = normalizar(args[0] || '');
+        const r = ALIAS_INSTR[ins] || ins;
+        if (INSTRUMENTOS[r]) p.instrumentoGlobal = r;
+        else err(`no existe el instrumento «${args[0] || ''}» (${Object.keys(INSTRUMENTOS).join(', ')})`);
       } else if (CLAVES_VOZ.has(clave)) {
         if (!voz) { err(`«${toks[0]}» va dentro de una voz: escribe antes «voz nombre»`); continue; }
         if (clave === 'instrumento') {
           const ins = normalizar(args[0] || '');
           const r = ALIAS_INSTR[ins] || ins;
-          if (INSTRUMENTOS[r]) { voz.instr = r; voz.lineaInstr = ln; }
+          if (INSTRUMENTOS[r]) { voz.instr = r; voz.instrExplicito = true; voz.lineaInstr = ln; }
           else err(`no existe el instrumento «${args[0] || ''}» (${Object.keys(INSTRUMENTOS).join(', ')})`);
         } else if (clave === 'tiempo') {
           const modo = normalizar(args[0] || '');
@@ -842,7 +856,7 @@ function parsear(texto) {
           if (g) voz.grados = g;
         } else if (clave === 'octava') {
           const v = entero(args[0]);
-          if (!(v >= -6 && v <= 6)) err('«octava» es un entero entre -6 y 6'); else voz.octava = v;
+          if (!(v >= -6 && v <= 6)) err('«octava» es un entero entre -6 y 6'); else { voz.octava = v; voz.octavaDada = true; }
         } else if (clave === 'entra' || clave === 'sale') {
           const v = entero(args[0]);
           if (!(v >= 1)) err(`«${clave}» es un número de compás ≥ 1`); else voz[clave] = v;
@@ -869,10 +883,15 @@ function parsear(texto) {
 
   // validación posterior y valores por defecto
   for (const v of p.voces) {
-    if (!v.instr) {
-      const r = ALIAS_INSTR[v.nombre] || v.nombre;
-      if (INSTRUMENTOS[r]) v.instr = r;
-      else { errores.push({ linea: v.linea, msg: `la voz «${v.nombre}» no tiene instrumento` }); continue; }
+    // instrumento propio: el que la voz declara > el que dice su nombre > piano.
+    // «instrumento X» fuera de una voz los reemplaza a todos mientras esté escrito.
+    const delNombre = INSTRUMENTOS[ALIAS_INSTR[v.nombreBase] || v.nombreBase] ? (ALIAS_INSTR[v.nombreBase] || v.nombreBase) : null;
+    v.instrPropio = v.instrExplicito ? v.instr : delNombre || 'piano';
+    v.instr = p.instrumentoGlobal || v.instrPropio;
+    // una voz de percusión que pasa a un instrumento con altura toca la base en su registro
+    if (p.instrumentoGlobal && !INSTRUMENTOS[v.instrPropio].melodico && INSTRUMENTOS[v.instr].melodico
+        && !v.grados && !v.octavaDada) {
+      v.octava = REGISTRO_PERCUSION[v.instrPropio] ?? 0;
     }
     const def = INSTRUMENTOS[v.instr];
     v.vol = v.params.vol ?? def.vol;
@@ -1966,7 +1985,7 @@ const COLORES = ['#586a45', '#4f6b82', '#b06a36', '#7f9a62', '#6f8aa0', '#c4844f
 const $ = s => document.querySelector(s);
 const ui = {
   titulo: $('#titulo'), estado: $('#estado'), aviso: $('#aviso'),
-  tocar: $('#b-tocar'), parar: $('#b-parar'), evaluar: $('#b-evaluar'), desde: $('#desde'),
+  tocar: $('#b-tocar'), parar: $('#b-parar'), evaluar: $('#b-evaluar'), piano: $('#b-piano'), desde: $('#desde'),
   lienzo: $('#lienzo'), regla: $('#regla'), afinTxt: $('#afin-txt'),
   ejemplos: $('#ejemplos'), abrir: $('#b-abrir'), archivo: $('#archivo'), copiar: $('#b-copiar'),
   guardar: $('#b-guardar'), wav: $('#b-wav'),
@@ -2052,7 +2071,7 @@ function mostrarMensajes(r) {
     li.className = 'ok';
     const cs = p.compases.map(c => `${c.num}/${c.den}`);
     const compases = cs.length > 6 ? cs.slice(0, 6).join(' ') + ' …' : cs.join(' ');
-    li.textContent = `Partitura válida · ${p.voces.length} voces · ${compases}${p.duracion ? ` · ${p.duracion} compases` : ' · sin final'}`;
+    li.textContent = `Partitura válida · ${p.voces.length} voces${p.instrumentoGlobal ? ` · todo ${p.instrumentoGlobal}` : ''} · ${compases}${p.duracion ? ` · ${p.duracion} compases` : ' · sin final'}`;
     ui.mensajes.append(li);
   }
   actualizarNumeros();
@@ -2061,8 +2080,34 @@ function evaluarTexto() {
   const r = parsear(ui.texto.value);
   mostrarMensajes(r);
   if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); asegurarPiano(r.partitura); }
+  if (r.partitura) ui.piano.setAttribute('aria-pressed', String(r.partitura.instrumentoGlobal === 'piano'));
   guardarBorrador();
   return r;
+}
+
+/* ---------- todo piano ----------
+   El botón escribe o quita la línea «instrumento piano» antes de la primera voz:
+   la partitura sigue siendo lo único que decide cómo suena. */
+function alternarPiano() {
+  const lineas = ui.texto.value.split('\n');
+  const sinComentario = l => l.replace(/#.*/, '');
+  let limite = lineas.findIndex(l => /^\s*voz\b/i.test(sinComentario(l)));
+  if (limite < 0) limite = lineas.length;
+  const idx = lineas.slice(0, limite).findIndex(l => /^\s*instrumento\s+\S+\s*$/i.test(sinComentario(l)));
+  const r = parsear(ui.texto.value);
+  const activo = !!(r.partitura && r.partitura.instrumentoGlobal === 'piano');
+  if (activo && idx < 0) { anunciar('La partitura dice «instrumento piano» dentro de una línea compartida: bórralo ahí para volver.'); return; }
+  if (activo) lineas.splice(idx, 1);
+  else if (idx >= 0) lineas[idx] = 'instrumento piano';
+  else {
+    let k = 0;
+    while (k < limite && /^\s*(#.*)?$/.test(lineas[k])) k++;   // después de los comentarios iniciales
+    lineas.splice(k, 0, 'instrumento piano');
+  }
+  ui.texto.value = lineas.join('\n');
+  anunciar(activo ? 'Cada voz vuelve a su instrumento.' : 'Todo piano: cada voz suena en el piano.');
+  if (S.tocando) evaluar(); else { evaluarTexto(); dibujar(); }
+  actualizarNumeros();
 }
 
 /* ---------- piano: carga de muestras ---------- */
@@ -2441,6 +2486,7 @@ function iniciar() {
   ui.tocar.addEventListener('click', tocar);
   ui.parar.addEventListener('click', parar);
   ui.evaluar.addEventListener('click', evaluar);
+  ui.piano.addEventListener('click', alternarPiano);
   ui.desde.addEventListener('change', () => { if (!S.tocando) dibujar(); });
   ui.ejemplos.addEventListener('change', () => {
     const e = EJEMPLOS[Number(ui.ejemplos.value)];
