@@ -6,6 +6,8 @@ Las voces pueden leer series como ritmo, como duraciones o como alturas: Fibonac
 
 Los instrumentos son sintéticos: batería analógica, un bajo con ampli en paralelo (grave limpio, medios saturados), pads de filtro lento con vibrato tardío, campanas FM, cuerda pulsada y seno, con una sala oscura por convolución.
 
+El piano es grabado: usa muestras de Salamander Grand Piano en `muestras/piano/`, con la afinación real de cada nota medida, así que los microtonos y las razones justas suenan donde se escriben. Se descargan solo las capas de fuerza que usa la partitura.
+
 `index.html` no tiene dependencias ni paso de compilación. El audio usa la Web Audio API del navegador y lo que se oye es lo mismo que se exporta en WAV.
 
 ## Partituras
@@ -24,3 +26,9 @@ voz bajo
   ritmo euclides(5)
   grados fib mod 7
 ```
+
+El piano necesita que la app se sirva desde una web (por ejemplo GitHub Pages): si se abre `index.html` como archivo local, el navegador bloquea la carga de las muestras y el resto de los instrumentos sigue sonando.
+
+## Créditos
+
+Piano: [Salamander Grand Piano V3](https://sfzinstruments.github.io/pianos/salamander) de Alexander Holm, bajo licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Se usan 4 de sus 16 capas, en mono, recortadas y en MP3; el detalle de los cambios está en `muestras/piano/CREDITOS.txt`.

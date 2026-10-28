@@ -200,6 +200,7 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>pad</dt><dd>Dos sierras desafinadas y un triángulo con filtro resonante que se abre despacio y vibrato tardío. Pensado para notas largas (<code>largo</code> 4 por defecto).</dd>
         <dt>metal</dt><dd>Campana FM: la portadora suena a la altura exacta y la moduladora a √2 le da el timbre metálico. <code>brillo</code> es el índice de modulación.</dd>
         <dt>cuerda · seno</dt><dd>Cuerda pulsada (Karplus-Strong) y seno puro.</dd>
+        <dt>piano</dt><dd>Piano de cola grabado, con 4 capas de fuerza que elige <code>vel</code>: 0,3, 0,5, 0,75 y 1 (los acentos suben a la siguiente). Cada nota usa la grabación más cercana, llevada a la altura exacta: la afinación real de cada muestra está medida, así que los microtonos y las razones justas suenan donde se escriben. La tecla se suelta tras <code>largo</code> pasos y <code>decae</code> es lo que tarda el apagador; por encima de Fa6 no hay apagadores, como en un piano real. La primera vez se descargan las muestras (unos 2 MB por capa).</dd>
       </dl>
 
       <h2>Ritmo</h2>
@@ -245,10 +246,12 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>brillo 0.6 · distorsión 0.4</dt><dd>Brillo del filtro o del ruido inicial (0–1) y saturación de la voz (0–1).</dd>
         <dt>largo 1.5</dt><dd>Duración de la nota en pasos (bajo y seno).</dd>
         <dt>prob 0.8</dt><dd>Probabilidad de cada golpe, decidida por la semilla.</dd>
+        <dt>pedal · pedal compás</dt><dd>Solo el piano. <code>pedal</code> deja resonar todo; <code>pedal compás</code> lo levanta y lo vuelve a bajar en cada barra, como se pedalea en la práctica.</dd>
         <dt>espacio 0.5</dt><dd>Cuánto de la voz va a la sala oscura (una reverberación de 3,2 s). Pad, metal, caja, tom, cuerda y seno ya traen algo.</dd>
         <dt>desafinar 7 · vibrato 6</dt><dd>Cents entre los osciladores del pad o del bajo, repartidos hacia arriba y hacia abajo de la altura exacta, y profundidad del vibrato tardío. En 0, la afinación queda pura.</dd>
       </dl>
       <p>Los cambios que aplicas con Evaluar mientras suena entran al comienzo del compás siguiente; los grados de cada voz vuelven a empezar desde ahí.</p>
+      <p>Piano: <a href="https://sfzinstruments.github.io/pianos/salamander" target="_blank" rel="noopener">Salamander Grand Piano V3</a> de Alexander Holm, bajo licencia <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC-BY 3.0</a>. Reducido a 4 de sus 16 capas, en mono, recortado y comprimido; afinación medida por nota.</p>
     </details>
   </section>
 </main>
@@ -272,12 +275,44 @@ const INSTRUMENTOS = {
   seno:    { vol: 0.45, decae: 0.08, brillo: 0.5,  distorsion: 0,    largo: 0.9, espacio: 0.15, desafinar: 0, vibrato: 0, melodico: true  },
   pad:     { vol: 0.4,  decae: 1.4,  brillo: 0.35, distorsion: 0,    largo: 4,   espacio: 0.55, desafinar: 7, vibrato: 6, melodico: true  },
   metal:   { vol: 0.4,  decae: 2.2,  brillo: 0.35, distorsion: 0,    largo: 1,   espacio: 0.4,  desafinar: 0, vibrato: 0, melodico: true  },
+  // piano grabado: «decae» es lo que tarda el apagador en callar la cuerda; brillo 0,5 es neutro
+  piano:   { vol: 0.8,  decae: 0.25, brillo: 0.5,  distorsion: 0,    largo: 1,   espacio: 0.22, desafinar: 0, vibrato: 0, melodico: true  },
 };
 const ALIAS_INSTR = {
   hihat: 'charles', hat: 'charles', platillo: 'charles', kick: 'bombo', snare: 'caja',
   bass: 'bajo', guitarra: 'cuerda', pluck: 'cuerda', sine: 'seno',
   colchon: 'pad', cs80: 'pad', campana: 'metal', campanas: 'metal', fm: 'metal',
+  pianoforte: 'piano', cola: 'piano',
 };
+
+/* ---------- piano: capas de fuerza ----------
+   Fuerza nominal de cada capa grabada (Salamander v2, v6, v10, v14). Una nota
+   usa la capa más cercana y una ganancia que ajusta la diferencia. */
+const CAPAS_PIANO = [0.3, 0.5, 0.75, 1.0];
+function capaPiano(vel) {
+  let i = 0;
+  while (i < CAPAS_PIANO.length - 1 && vel > (CAPAS_PIANO[i] + CAPAS_PIANO[i + 1]) / 2) i++;
+  return { i, ganancia: Math.min(1.25, Math.max(0.5, vel / CAPAS_PIANO[i])) };
+}
+/** ¿Puede este ritmo producir acentos (valor 2)? */
+function puedeAcentuar(r) {
+  if (!r) return false;
+  if (r.gen === 'golpes') return !r.transf.some(t => t.tipo === 'invertir') && r.pat.includes(2);
+  if (r.gen !== 'serie' || r.invertido) return false;
+  if (r.mod === 2 && !r.suma) return false;
+  const binarias = ['thue', 'palabrafib', 'automata'];
+  return !(binarias.includes(r.serie.nombre) && !r.mod && !r.suma);
+}
+/** Capas del piano que una partitura va a usar (para cargar solo esas). */
+function capasPianoNecesarias(p) {
+  const capas = new Set();
+  for (const v of p.voces) {
+    if (v.instr !== 'piano' || v.silencio) continue;
+    capas.add(capaPiano(v.vel).i);
+    if (puedeAcentuar(v.ritmo)) capas.add(capaPiano(Math.min(1, v.vel * 1.3)).i);
+  }
+  return [...capas].sort((a, b) => a - b);
+}
 const PARAMS_NUM = {
   vol: [0, 1.5], pan: [-1, 1], decae: [0.01, 10], brillo: [0, 1], distorsion: [0, 1],
   largo: [0.05, 16], prob: [0, 1], vel: [0, 1], espacio: [0, 1], desafinar: [0, 50], vibrato: [0, 100],
@@ -586,7 +621,7 @@ function frecuencia(ratios, base, grado) {
 }
 
 /* ---------- parser ---------- */
-const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio',
+const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio', 'pedal',
   ...Object.keys(PARAMS_NUM)]);
 
 /** Lee «mod n» y «suma n» a partir de args[i]; devuelve el índice siguiente o -1 si hubo error. */
@@ -764,7 +799,7 @@ function parsear(texto) {
           nombre, linea: ln, instr: null, lineaInstr: ln,
           tiempo: { modo: 'compas', u: null }, lineaTiempo: ln,
           ritmo: { gen: 'todos', transf: [] }, grados: null, octava: 0,
-          entra: null, sale: null, silencio: false, params: {},
+          entra: null, sale: null, silencio: false, pedal: null, lineaPedal: 0, params: {},
         };
         p.voces.push(voz);
         if (args[1]) {
@@ -811,6 +846,13 @@ function parsear(texto) {
         } else if (clave === 'entra' || clave === 'sale') {
           const v = entero(args[0]);
           if (!(v >= 1)) err(`«${clave}» es un número de compás ≥ 1`); else voz[clave] = v;
+        } else if (clave === 'pedal') {
+          const modo = normalizar(args[0] || '');
+          voz.lineaPedal = ln;
+          if (!modo || modo === 'siempre') voz.pedal = 'siempre';
+          else if (modo === 'compas') voz.pedal = 'compas';
+          else if (modo === 'no') voz.pedal = null;
+          else err('«pedal» acepta: pedal (deja resonar), pedal compás (se renueva en cada compás) o pedal no');
         } else if (clave === 'silencio') {
           voz.silencio = true;
         } else {
@@ -845,6 +887,7 @@ function parsear(texto) {
     v.desafinar = v.params.desafinar ?? def.desafinar;
     v.vibrato = v.params.vibrato ?? def.vibrato;
     v.melodico = def.melodico;
+    if (v.pedal && v.instr !== 'piano') avisos.push({ linea: v.lineaPedal, msg: '«pedal» solo afecta al piano' });
     if (v.grados && !def.melodico) avisos.push({ linea: v.linea, msg: `«${v.instr}» no tiene altura: se ignoran sus grados` });
     if (v.entra && v.sale && v.sale <= v.entra) errores.push({ linea: v.linea, msg: '«sale» debe ser mayor que «entra»' });
     if (v.tiempo.modo === 'compas' && v.tiempo.u) {
@@ -1008,7 +1051,7 @@ function crearCursor(p, linea, vi, c0) {
       }
       st.h++;
       out.push({
-        t, dur: dur * multDur, c, g, voz: vi, acento: v === 2,
+        t, dur: dur * multDur, c, g, voz: vi, acento: v === 2, finCompas: linea.inicio(c + 1),
         vel: v === 2 ? Math.min(1, voz.vel * 1.3) : voz.vel,
         grado, freq,
       });
@@ -1075,7 +1118,7 @@ function codificarWAV(canales, sr) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    INSTRUMENTOS, SERIES, parsearSerie, valorSerie, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
+    INSTRUMENTOS, CAPAS_PIANO, capaPiano, puedeAcentuar, capasPianoNecesarias, SERIES, parsearSerie, valorSerie, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
     parsearGolpes, valorGrado, ratiosAfinacion, frecuencia, parsear, crearLinea, crearCursor,
     eventosEntre, cuerdaKS, codificarWAV,
   };
@@ -1097,7 +1140,7 @@ function crearRecursos(ctx, semilla) {
   const d = ruido.getChannelData(0);
   const rnd = mulberry32((semilla ^ 0x9e3779b9) >>> 0);
   for (let i = 0; i < d.length; i++) d[i] = rnd() * 2 - 1;
-  return { ruido, ks: new Map(), semilla, fueraDeRango: 0 };
+  return { ruido, ks: new Map(), semilla, fueraDeRango: 0, faltanMuestras: 0, pianoSonando: new Map() };
 }
 
 function curvaDistorsion(k) {
@@ -1197,7 +1240,12 @@ function crearBus(ctx, mezcla, voz) {
   const entrada = ctx.createGain();
   let nodo = entrada;
   if (voz.instr === 'bajo') nodo = cadenaBajo(ctx, entrada, voz);
-  else if (voz.distorsion > 0) {
+  else if (voz.instr === 'piano' && Math.abs(voz.brillo - 0.5) > 1e-3) {
+    const hs = ctx.createBiquadFilter();       // brillo del piano: ±12 dB sobre 2,5 kHz
+    hs.type = 'highshelf'; hs.frequency.value = 2500; hs.gain.value = (voz.brillo - 0.5) * 24;
+    nodo.connect(hs); nodo = hs;
+  }
+  if (voz.instr !== 'bajo' && voz.distorsion > 0) {
     const ws = ctx.createWaveShaper();
     ws.curve = curvaDistorsion(voz.distorsion);
     ws.oversample = '4x';
@@ -1415,7 +1463,122 @@ const SINTES = {
     car.start(t); moduladora.start(t); car.stop(fin); moduladora.stop(fin);
     vibrar(ctx, [car], t, voz.vibrato, fin);
   },
+  /**
+   * Piano grabado. La muestra más cercana se acelera o frena hasta la altura
+   * exacta (su afinación real está medida en el manifiesto). La tecla se
+   * suelta tras «largo» pasos; con «pedal compás», al final del compás; con
+   * «pedal», nunca. Por encima de Fa6 el piano no tiene apagadores.
+   * Una nota nueva en la misma voz y la misma altura apaga la anterior.
+   */
+  piano(ctx, bus, ev, voz, rec, t) {
+    const sel = elegirMuestraPiano(ev.freq, ev.vel);
+    if (!sel) { rec.faltanMuestras++; return; }
+    const { m, ganancia, rate } = sel;
+    const src = ctx.createBufferSource();
+    src.buffer = m.buf;
+    src.playbackRate.value = rate;
+    const g = ctx.createGain();            // tecla y apagador
+    g.gain.value = ganancia * PIANO_NIVEL;
+    const corte = ctx.createGain();        // solo lo usa una nota nueva en la misma tecla: nunca se reprograma
+    src.connect(g); g.connect(corte); corte.connect(bus);
+    const t0 = t - 0.003 / rate;               // las muestras guardan 3 ms antes del ataque
+    src.start(Math.max(0, t0), m.inicio);
+    const finMuestra = t0 + (m.buf.duration - m.inicio) / rate;
+    const semitono = 12 * Math.log2(ev.freq / 27.5);
+    let suelta = null;
+    if (semitono < 68.5 && voz.pedal !== 'siempre') {
+      suelta = t + ev.dur * voz.largo;
+      if (voz.pedal === 'compas') suelta = Math.max(suelta, t + (ev.finCompas - ev.t));
+    }
+    let fin = finMuestra;
+    if (suelta != null && suelta < finMuestra) {
+      const tau = voz.decae * (semitono < 24 ? 0.6 : 0.3);   // los graves tardan más en callarse
+      g.gain.setValueAtTime(ganancia * PIANO_NIVEL, suelta);
+      g.gain.setTargetAtTime(0, suelta, tau);
+      fin = Math.min(finMuestra, suelta + tau * 8);
+    }
+    const clave = ev.voz + '|' + ev.freq.toFixed(3);
+    const anterior = rec.pianoSonando.get(clave);
+    if (anterior && anterior.fin > t) {
+      anterior.corte.gain.setValueAtTime(1, t);
+      anterior.corte.gain.setTargetAtTime(0, t, 0.04);
+      anterior.src.stop(Math.min(anterior.fin, t + 0.3));
+    }
+    rec.pianoSonando.set(clave, { corte, src, fin });
+    src.stop(fin + 0.02);
+  },
 };
+
+/* ---------- carga del piano ---------- */
+const PIANO_NIVEL = 1.8;   // las muestras conservan su dinámica real; esto las acerca al nivel del resto
+const PIANO = { manifiesto: null, capas: [], promesas: new Map() };
+
+function decodificar(ctx, ab) {
+  return new Promise((res, rej) => {
+    const r = ctx.decodeAudioData(ab, res, rej);
+    if (r && typeof r.then === 'function') r.then(res, rej);
+  });
+}
+/** Segundo en que empieza la muestra: 3 ms antes de cruzar el 2 % del pico (salta el retardo del decodificador). */
+function inicioMuestra(buf) {
+  const d = buf.getChannelData(0);
+  let pk = 0;
+  for (let i = 0; i < d.length; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > pk) pk = a; }
+  const umbral = pk * 0.02;
+  let i = 0;
+  while (i < d.length && Math.abs(d[i]) < umbral) i++;
+  return Math.max(0, i / buf.sampleRate - 0.003);
+}
+function pianoCapaLista(i) { return Array.isArray(PIANO.capas[i]); }
+
+/**
+ * Carga y decodifica las capas pedidas. leer(nombre) → Promise<ArrayBuffer>.
+ * progreso(hechas, total) se llama tras cada muestra.
+ */
+async function cargarCapasPiano(capas, { leer, ctx, progreso }) {
+  if (!PIANO.manifiesto) {
+    if (!PIANO.promesas.has('manifiesto')) {
+      PIANO.promesas.set('manifiesto', leer('piano.json').then(ab => {
+        PIANO.manifiesto = JSON.parse(new TextDecoder('utf-8').decode(ab));
+      }));
+    }
+    try { await PIANO.promesas.get('manifiesto'); } catch (e) { PIANO.promesas.delete('manifiesto'); throw e; }
+  }
+  const man = PIANO.manifiesto;
+  const pendientes = capas.filter(i => !pianoCapaLista(i));
+  const total = pendientes.length * man.notas.length;
+  let hechas = 0;
+  if (progreso && total) progreso(0, total);
+  await Promise.all(pendientes.map(i => {
+    if (!PIANO.promesas.has(i)) {
+      const pr = Promise.all(man.notas.map(n => leer(n.archivos[i])
+        .then(ab => decodificar(ctx, ab))
+        .then(buf => {
+          hechas++;
+          if (progreso) progreso(hechas, total);
+          return { buf, inicio: inicioMuestra(buf), hz: n.hz[i], nombre: n.nombre };
+        })))
+        .then(muestras => { PIANO.capas[i] = muestras; })
+        .catch(e => { PIANO.promesas.delete(i); throw e; });
+      PIANO.promesas.set(i, pr);
+    }
+    return PIANO.promesas.get(i);
+  }));
+}
+
+/** Muestra más cercana en altura dentro de la capa que toca; null si la capa no está cargada o queda a más de una octava. */
+function elegirMuestraPiano(freq, vel) {
+  const { i, ganancia } = capaPiano(vel);
+  const capa = PIANO.capas[i];
+  if (!capa) return null;
+  let mejor = null, dist = Infinity;
+  for (const m of capa) {
+    const d = Math.abs(Math.log2(freq / m.hz));
+    if (d < dist) { dist = d; mejor = m; }
+  }
+  if (!mejor || dist > 1) return null;
+  return { m: mejor, ganancia, rate: freq / mejor.hz };
+}
 
 /** Programa un golpe en el contexto. Devuelve false si quedó fuera del rango audible. */
 function programarEvento(ctx, p, buses, rec, ev, tAudio) {
@@ -1434,7 +1597,9 @@ function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
   const nComp = p.duracion || compasesSinDuracion;
   const tFin = linea.inicio(nComp);
   const sala = p.voces.some(v => v.espacio > 0 && !v.silencio) ? SALA_SEG : 0;
-  const cola = Math.max(0.5, sala, ...p.voces.map(v => v.decae)) + 0.3;
+  const pianos = p.voces.filter(v => v.instr === 'piano' && !v.silencio);
+  const piano = pianos.some(v => v.pedal === 'siempre') ? 14 : pianos.length ? 5 : 0;   // con pedal, los graves suenan hasta 14 s
+  const cola = Math.max(0.5, sala, piano, ...p.voces.map(v => v.decae)) + 0.3;
   const largo = Math.ceil((tFin + cola) * sr);
   const ctx = new ClaseOffline(2, largo, sr);
   const rec = crearRecursos(ctx, p.semilla);
@@ -1442,11 +1607,12 @@ function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
   const buses = p.voces.map(v => crearBus(ctx, mezcla, v));
   const evs = eventosEntre(p, linea, 0, nComp);
   for (const ev of evs) programarEvento(ctx, p, buses, rec, ev, ev.t + 0.005);
-  return ctx.startRendering().then(buf => ({ buf, eventos: evs.length, fueraDeRango: rec.fueraDeRango, segundos: tFin }));
+  return ctx.startRendering().then(buf => ({ buf, eventos: evs.length, fueraDeRango: rec.fueraDeRango, faltanMuestras: rec.faltanMuestras, segundos: tFin }));
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES, respuestaSala };
+  module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES, respuestaSala,
+    PIANO, cargarCapasPiano, elegirMuestraPiano, pianoCapaLista, inicioMuestra };
 }
 </script>
 <script>
@@ -1725,6 +1891,37 @@ voz bombo
   ritmo x...
   entra 9 · sale 21
 ` },
+{ nombre: 'Nocturno', texto: `# Nocturno
+# Piano de cola en afinación justa (modo eólico).
+# Mano izquierda: duraciones de Kolakoski sobre un arpegio fijo, con el
+# pedal renovado en cada compás. Mano derecha: la serie de Nørgård sobre la
+# palabra de Fibonacci, que reparte los golpes sin repetirse nunca.
+tempo 66 · semilla 8
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 3/4 3/4 2/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 4 7 9 7 4
+  pedal compás
+  vel 0.5
+voz derecha piano
+  tiempo compás 1/16
+  ritmo palabrafib
+  grados norgard suma 14
+  pedal compás
+  vel 0.7
+  entra 3
+voz grave piano
+  tiempo divide 1
+  grados 0 0 -2 -3
+  largo 0.9
+  vel 0.5
+  entra 9 · sale 21
+` },
 { nombre: 'Plantilla', texto: `# Plantilla
 tempo 120
 compás 4/4
@@ -1854,9 +2051,44 @@ function mostrarMensajes(r) {
 function evaluarTexto() {
   const r = parsear(ui.texto.value);
   mostrarMensajes(r);
-  if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); }
+  if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); asegurarPiano(r.partitura); }
   guardarBorrador();
   return r;
+}
+
+/* ---------- piano: carga de muestras ---------- */
+const RUTA_PIANO = 'muestras/piano/';
+let ctxDecodificar = null;
+function leerPiano(nombre) {
+  return fetch(RUTA_PIANO + nombre).then(r => {
+    if (!r.ok) throw new Error(`no se encontró ${nombre} (HTTP ${r.status})`);
+    return r.arrayBuffer();
+  });
+}
+function contextoDecodificar() {
+  if (S.ctx) return S.ctx;
+  if (!ctxDecodificar) {
+    const C = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!C) throw new Error('este navegador no puede decodificar audio');
+    ctxDecodificar = new C(1, 1, 48000);
+  }
+  return ctxDecodificar;
+}
+function avisarErrorPiano(e) {
+  anunciar(location.protocol === 'file:'
+    ? 'El piano no carga si la app se abre como archivo local: el navegador bloquea las muestras. Ábrela desde GitHub Pages. El resto de las voces suena igual.'
+    : `No se pudo cargar el piano (${e.message}). El resto de las voces suena igual.`);
+}
+/** Carga las capas del piano que pide la partitura. Nunca falla: si no cargan, avisa y el piano calla. */
+function asegurarPiano(p) {
+  const capas = capasPianoNecesarias(p);
+  if (!capas.length || capas.every(pianoCapaLista)) return Promise.resolve(true);
+  let ctx;
+  try { ctx = contextoDecodificar(); } catch (e) { avisarErrorPiano(e); return Promise.resolve(false); }
+  return cargarCapasPiano(capas, {
+    leer: leerPiano, ctx,
+    progreso: (hechas, total) => { if (hechas < total) anunciar(`Cargando el piano: ${hechas} de ${total} muestras…`); },
+  }).then(() => { anunciar('Piano listo.'); return true; }, e => { avisarErrorPiano(e); return false; });
 }
 
 /* ---------- audio en vivo ---------- */
@@ -1918,9 +2150,12 @@ function tocar() {
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* opcional */ }
   }
   const ctx = S.ctx;
-  const reanudar = ctx.state !== 'running' ? ctx.resume() : Promise.resolve();
+  const reanudar = ctx.state !== 'running' ? ctx.resume() : Promise.resolve();   // dentro del gesto, para iOS
   if (S.tocando) detenerAudio();
-  reanudar.then(() => {
+  const intento = S.intento = (S.intento || 0) + 1;
+  reanudar.then(() => asegurarPiano(r.partitura)).then(() => {
+    if (intento !== S.intento) return;          // se volvió a pulsar mientras cargaba
+    if (S.tocando) detenerAudio();
     S.mezcla = crearMezcla(ctx, ctx.destination);
     S.p = null; S.sonados = []; S.pendiente = null; S.avisoRango = false;
     if (S.rec) S.rec.fueraDeRango = 0;
@@ -1946,6 +2181,7 @@ function detenerAudio() {
   S.mezcla = null; S.buses = []; S.p = null; S.sonados = [];
 }
 function parar() {
+  S.intento = (S.intento || 0) + 1;            // cancela un arranque que esté esperando al piano
   if (!S.tocando) return;
   detenerAudio();
   actualizarBotones();
@@ -1959,14 +2195,19 @@ function evaluar() {
     dibujar();
     return;
   }
-  if (!S.tocando) { dibujar(); anunciar('Partitura evaluada.'); return; }
-  const L = S.linea;
-  const cb = L.compasEn(Math.max(0, S.horizonte)) + 1;
-  let tScore, c;
-  if (S.p.duracion && cb >= S.p.duracion) { tScore = L.fin; c = 0; }
-  else { tScore = L.inicio(cb); c = cb; }
-  S.pendiente = { p: r.partitura, c, tScore };
-  anunciar(`Los cambios entran en el compás ${c + 1}.`);
+  if (!S.tocando) { dibujar(); if (capasPianoNecesarias(r.partitura).every(pianoCapaLista)) anunciar('Partitura evaluada.'); return; }
+  const aplicar = () => {
+    const L = S.linea;
+    const cb = L.compasEn(Math.max(0, S.horizonte)) + 1;
+    let tScore, c;
+    if (S.p.duracion && cb >= S.p.duracion) { tScore = L.fin; c = 0; }
+    else { tScore = L.inicio(cb); c = cb; }
+    S.pendiente = { p: r.partitura, c, tScore };
+    anunciar(`Los cambios entran en el compás ${c + 1}.`);
+  };
+  if (capasPianoNecesarias(r.partitura).every(pianoCapaLista)) { aplicar(); return; }
+  const intento = S.intento;                    // faltan capas del piano: entra cuando terminen de cargar
+  asegurarPiano(r.partitura).then(() => { if (S.tocando && intento === S.intento) aplicar(); });
 }
 
 function actualizarBotones() {
@@ -2148,12 +2389,14 @@ async function exportarWAV() {
   if (!Clase) { anunciar('Este navegador no puede renderizar audio fuera de tiempo real.'); return; }
   const n = r.partitura.duracion || 16;
   ui.wav.disabled = true;
-  anunciar(`Renderizando ${n} compases…`);
   try {
+    await asegurarPiano(r.partitura);
+    anunciar(`Renderizando ${n} compases…`);
     const res = await renderizar(r.partitura, Clase, 16, 44100);
     const wav = codificarWAV([res.buf.getChannelData(0), res.buf.getChannelData(1)], res.buf.sampleRate);
     descargar(new Blob([wav], { type: 'audio/wav' }), `ciclos-${sello()}.wav`);
-    anunciar(`WAV listo: ${res.segundos.toFixed(1)} s, ${res.eventos} golpes${r.partitura.duracion ? '' : ' (sin «duración» se exportan 16 compases)'}.`);
+    anunciar(`WAV listo: ${res.segundos.toFixed(1)} s, ${res.eventos} golpes${r.partitura.duracion ? '' : ' (sin «duración» se exportan 16 compases)'}`
+      + (res.faltanMuestras ? `; ${res.faltanMuestras} notas de piano quedaron sin muestra.` : '.'));
   } catch (e) {
     anunciar('No se pudo exportar: ' + e.message);
   } finally { ui.wav.disabled = false; }

@@ -1,0 +1,30 @@
+# Nocturno
+# Piano de cola en afinación justa (modo eólico).
+# Mano izquierda: duraciones de Kolakoski sobre un arpegio fijo, con el
+# pedal renovado en cada compás. Mano derecha: la serie de Nørgård sobre la
+# palabra de Fibonacci, que reparte los golpes sin repetirse nunca.
+tempo 66 · semilla 8
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 3/4 3/4 2/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 4 7 9 7 4
+  pedal compás
+  vel 0.5
+voz derecha piano
+  tiempo compás 1/16
+  ritmo palabrafib
+  grados norgard suma 14
+  pedal compás
+  vel 0.7
+  entra 3
+voz grave piano
+  tiempo divide 1
+  grados 0 0 -2 -3
+  largo 0.9
+  vel 0.5
+  entra 9 · sale 21

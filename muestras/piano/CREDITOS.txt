@@ -1,0 +1,14 @@
+Piano: Salamander Grand Piano V3
+Autor: Alexander Holm
+Instrumento grabado: Yamaha C5, 48 kHz / 24 bits, dos AKG C414 en par AB
+Fuente: https://archive.org/details/SalamanderGrandPianoV3
+Versión usada: https://github.com/sfzinstruments/SalamanderGrandPiano
+Licencia: Creative Commons Atribución 3.0 Unported (CC BY 3.0)
+          https://creativecommons.org/licenses/by/3.0/
+
+Cambios hechos para phaneron-partitures:
+- Se usan 4 de las 16 capas de fuerza (v2, v6, v10 y v14) de las 30 notas grabadas.
+- Mezcla a mono, recorte del silencio inicial y de la cola (14 s en el grave, 3 s en el agudo),
+  una ganancia común para todas y compresión a MP3 VBR.
+- La afinación real de cada muestra se midió y está en piano.json. En particular, el archivo
+  de Do8 del original suena a 4434 Hz, cerca de Do sostenido 8, y así se trata.
