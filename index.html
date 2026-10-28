@@ -1202,7 +1202,16 @@ function crearMezcla(ctx, destino) {
   sala.normalize = true;
   sala.buffer = respuestaSala(ctx, SALA_SEG);
   sala.connect(entrada);
-  return { entrada, comp, lim, sala };
+  // El piano no pasa por el compresor: le aplastaría el golpe del martillo (~11 dB
+  // en los primeros milisegundos). Va directo al limitador, retrasado lo mismo que
+  // el compresor retrasa al resto (6 ms en Chrome, Safari y Firefox) para no adelantarse.
+  const directo = ctx.createGain();
+  directo.gain.value = 0.55;
+  const alinear = ctx.createDelay(0.05);
+  alinear.delayTime.value = 0.006;
+  directo.connect(alinear);
+  alinear.connect(lim);
+  return { entrada, comp, lim, sala, directo };
 }
 
 /**
@@ -1262,7 +1271,7 @@ function crearBus(ctx, mezcla, voz) {
     pn.pan.value = voz.pan;
     vol.connect(pn); salida = pn;
   }
-  salida.connect(mezcla.entrada);
+  salida.connect(voz.instr === 'piano' && mezcla.directo ? mezcla.directo : mezcla.entrada);
   if (voz.espacio > 0 && mezcla.sala) {
     const envio = ctx.createGain();
     envio.gain.value = voz.espacio;
@@ -2174,8 +2183,11 @@ function detenerAudio() {
   S.timer = null; S.tocando = false; S.pendiente = null;
   const m = S.mezcla, ctx = S.ctx;
   if (m) {
-    m.entrada.gain.cancelScheduledValues(ctx.currentTime);
-    m.entrada.gain.setTargetAtTime(0, ctx.currentTime, 0.015);
+    for (const nodo of [m.entrada, m.directo]) {
+      if (!nodo) continue;
+      nodo.gain.cancelScheduledValues(ctx.currentTime);
+      nodo.gain.setTargetAtTime(0, ctx.currentTime, 0.015);
+    }
     setTimeout(() => { try { m.lim.disconnect(); } catch (e) { /* ya desconectado */ } }, 250);
   }
   S.mezcla = null; S.buses = []; S.p = null; S.sonados = [];
