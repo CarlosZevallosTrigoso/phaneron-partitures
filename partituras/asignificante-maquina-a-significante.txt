@@ -1,0 +1,29 @@
+# Máquina a-significante
+# Todas las pistas con que el oído construye sentido, desactivadas a la vez:
+# una escala sin octava (pasos de 78 cents, la escala alfa de Wendy Carlos),
+# ataques sin pulso (Poisson), alturas que no se repiten antes de agotarse
+# o que se eligen en el punto de máxima imprevisibilidad, notas esparcidas
+# en varias octavas y fuerzas sin relación con nada. El medidor debería
+# mostrar una sorpresa relativa cercana a 1, casi ningún motivo repetido y
+# un tiempo de entropía alta.
+tempo 60 · semilla 23
+afinación paso 78
+base 65.41
+duración 24
+
+voz una piano
+  tiempo libre 3.5
+  grados permutaciones(15)       # 15 pasos: 1170 cents, una casi octava que no cierra
+  dispersar 4
+  octava 1
+  vel azar 0.25 0.8
+voz otra piano
+  tiempo libre 2.2
+  grados expectativa(0.55) mod 31
+  dispersar 3
+  octava 1
+  vel azar 0.2 0.7
+voz grave piano
+  tiempo libre 0.4
+  grados permutaciones(7)
+  vel azar 0.35 0.6

@@ -1,0 +1,23 @@
+# Bohlen-Pierce
+# Una escala que se repite cada tritava (3/1) en lugar de cada octava,
+# dividida en 13 pasos iguales: la propuso Heinz Bohlen en 1972 y, por su
+# cuenta, John Pierce. Aquí hay pulso y compás, pero la altura pierde su
+# identidad: ninguna nota vuelve «una octava más arriba». Dos voces barajan
+# los 13 pasos sin repetir ninguno hasta tocarlos todos, cada una a su ritmo.
+tempo 84 · semilla 24
+afinación tritava 13
+base 65.41
+compás 7/8
+duración 24
+
+voz lenta piano
+  ritmo euclides(4)
+  grados permutaciones(13)
+  octava 1
+  vel 0.55
+voz rapida piano
+  tiempo compás 1/16
+  ritmo euclides(9)
+  grados permutaciones(13)
+  octava 2
+  vel 0.5

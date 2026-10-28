@@ -1,0 +1,31 @@
+# Del ritornelo a la deriva
+# Un proceso en tres capas. La melodía empieza en un ritornelo (expectativa
+# 0,1) y en 200 notas llega al punto de máxima imprevisibilidad (0,55). El
+# bajo marca la tónica y se retira en el compás 13. Desde el compás 11 entra
+# una voz sin pulso (ataques de Poisson), cada vez más densa, con notas
+# esparcidas en tres octavas y fuerzas al azar.
+tempo 92 · semilla 22
+afinación edo 12
+base 65.41                     # do2
+compás 4/4
+duración 32
+
+voz melodia piano
+  tiempo compás 1/8
+  grados expectativa(0.1, 0.55, 200) mod 12
+  octava 2
+  vel 0.6
+voz tonica piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.5
+  sale 13
+voz deriva piano
+  tiempo libre 1 6 150
+  grados expectativa(0.55) mod 24
+  dispersar 3
+  octava 1
+  vel azar 0.3 0.8
+  entra 11

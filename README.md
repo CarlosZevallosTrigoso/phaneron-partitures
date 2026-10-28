@@ -4,6 +4,8 @@ Secuenciador en un solo HTML para tocar partituras escritas con criterios matem�
 
 Las voces pueden leer series como ritmo, como duraciones o como alturas: Fibonacci, primos, la serie infinita de Nørgård, Recamán, Collatz, mira y di de Conway, Stern, Thue-Morse, la palabra de Fibonacci, Kolakoski, el triángulo de Pascal, autómatas celulares elementales y el mapa logístico.
 
+Para buscar una música a-significante hay herramientas que desactivan, una por una, las pistas con que el oído construye sentido: afinaciones sin octava (`afinación paso 78`, `afinación tritava 13`), tiempo sin pulso (`tiempo libre`, ataques de Poisson), notas esparcidas en varias octavas (`dispersar`), fuerzas al azar (`vel azar`), permutaciones que agotan las alturas antes de repetir, y un generador de `expectativa` que elige según un modelo de oyente, de lo más esperado (un ritornelo) a lo menos esperado. Un medidor calcula para cada voz la entropía de las alturas, la sorpresa por nota, los motivos repetidos y la regularidad del tiempo. Una observación medida: el punto menos predecible no es «siempre lo inesperado» sino el azar; rechazar lo esperado de forma sistemática vuelve a formar patrón.
+
 Los instrumentos son sintéticos: batería analógica, un bajo con ampli en paralelo (grave limpio, medios saturados), pads de filtro lento con vibrato tardío, campanas FM, cuerda pulsada y seno, con una sala oscura por convolución.
 
 El piano es grabado: usa muestras de Salamander Grand Piano en `muestras/piano/`, con la afinación real de cada nota medida, así que los microtonos y las razones justas suenan donde se escriben. Se descargan solo las capas de fuerza que usa la partitura.
@@ -33,7 +35,7 @@ El botón «Todo piano» escribe `instrumento piano` al comienzo de la partitura
 
 ## Ejemplos
 
-Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 7 para los sintetizadores y una plantilla.
+Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla.
 
 ## Fuentes y homenajes
 
@@ -46,6 +48,7 @@ Algunas piezas toman ideas o procedimientos de otros, y lo dicen en sus comentar
 - «Otonalidad» usa el término y la escala armónica de Harry Partch; «Treinta y uno», la división de la octava de Christiaan Huygens y Adriaan Fokker.
 - «Octatónica» y «No retrogradables» usan dos ideas de Olivier Messiaen: los modos de transposición limitada y los ritmos palindrómicos.
 - Los ritmos euclidianos siguen el análisis de Godfried Toussaint sobre ritmos tradicionales.
+- Las herramientas a-significantes retoman ideas conocidas: los procesos de Poisson de la música estocástica de Iannis Xenakis; la escala alfa de Wendy Carlos; la escala de Heinz Bohlen y John Pierce; el puntillismo de Anton Webern; la dinámica independiente de Messiaen (*Mode de valeurs et d'intensités*); el principio dodecafónico de no repetir antes de agotar las alturas. El modelo de oyente sigue la teoría de la expectativa de David Huron y el modelo IDyOM de Marcus Pearce. La observación de que el rechazo sistemático y el azar convergen recuerda el análisis de György Ligeti sobre *Structures Ia* de Boulez. El término «a-significante» es de Félix Guattari.
 - Las series y teoremas citados (Fibonacci, Pisano, Dirichlet, Stern, Calkin-Wilf, Thue-Morse, Prouhet, Kolakoski, Conway, Collatz, Recamán, Lucas, Wolfram, Cook, Li-Yorke, Lorenz) son de dominio matemático.
 
 ## Créditos

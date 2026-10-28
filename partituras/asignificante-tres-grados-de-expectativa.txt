@@ -1,0 +1,28 @@
+# Tres grados de expectativa
+# Tres voces eligen sus notas con el mismo generador y el mismo ritmo; solo
+# cambia el nivel de expectativa. La primera (0,15) sigue lo más esperado y
+# arma un ritornelo; la segunda (0,5) es azar; la tercera (1) elige siempre
+# lo menos esperado. Escúchalas por turno y mira el medidor: la tercera no es
+# la más imprevisible. Rechazar lo esperado de forma sistemática también es
+# una regla, y el oído la aprende.
+tempo 96 · semilla 21
+afinación edo 12
+base 130.81                    # do3
+compás 4/4
+duración 24
+
+voz esperada piano
+  tiempo compás 1/8
+  grados expectativa(0.15) mod 12
+  octava 1
+  sale 9
+voz azar piano
+  tiempo compás 1/8
+  grados expectativa(0.5) mod 12
+  octava 1
+  entra 9 · sale 17
+voz inesperada piano
+  tiempo compás 1/8
+  grados expectativa(1) mod 12
+  octava 1
+  entra 17

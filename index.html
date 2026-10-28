@@ -79,6 +79,15 @@ button:disabled { opacity: 0.4; cursor: default; }
 #lienzo, #regla { width: 100%; display: block; }
 #lienzo { border: 1px solid var(--linea); border-radius: var(--r); }
 .afinacion { display: grid; gap: 2px; }
+.medidor { display: grid; gap: 6px; min-width: 0; }
+.medidor .etiqueta { margin: 0; font-size: var(--t-1); font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue); }
+.medidor .tabla { overflow-x: auto; }
+.medidor table { border-collapse: collapse; width: 100%; font-size: var(--t-1); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.medidor th, .medidor td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--linea); }
+.medidor thead th { color: var(--tenue); font-weight: 400; }
+.medidor tbody th { font-weight: 400; }
+.medidor tr.total th, .medidor tr.total td { border-top: 1px solid var(--tinta); font-weight: 600; }
+.medidor .pie { max-width: 90ch; }
 .pie { margin: 0; color: var(--tenue); font-size: var(--t-0); }
 
 .trabajo { display: grid; gap: 20px; min-width: 0; }
@@ -145,6 +154,7 @@ button:disabled { opacity: 0.4; cursor: default; }
       <canvas id="regla" role="img" aria-label="Regla de afinación: los grados de la escala en cents sobre una octava"></canvas>
       <p id="afin-txt" class="pie"></p>
     </div>
+    <div id="medidor" class="medidor" aria-live="polite"></div>
   </section>
 
   <section class="trabajo">
@@ -181,6 +191,8 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>afinación razones 1/1 9/8 5/4 3/2</dt><dd>Escala por razones justas.</dd>
         <dt>afinación cents 0 150 350 500</dt><dd>Escala en cents.</dd>
         <dt>afinación generador phi 9</dt><dd>Apila n veces una razón (3/2, 7/4, 11/8, phi…) y la pliega a la octava. La pitagórica es <code>generador 3/2</code>. Por el teorema de las tres distancias, la escala tiene a lo sumo tres tamaños de paso.</dd>
+        <dt>afinación paso 78</dt><dd>Escala sin octava: pasos iguales del tamaño dado en cents que nunca vuelven a coincidir con la octava (78 es la escala alfa de Wendy Carlos). Sin octava no hay «la misma nota más arriba».</dd>
+        <dt>afinación tritava 13</dt><dd>Escala de Bohlen-Pierce: divide la tritava (3/1) en n pasos iguales; se repite cada 3/1 y no cada octava.</dd>
         <dt>afinación stern 7</dt><dd>Las n razones más simples que aparecen entre términos vecinos de la serie de Stern (1/1, 6/5, 5/4, 4/3, 3/2…).</dd>
         <dt>base 55</dt><dd>Frecuencia en Hz del grado 0.</dd>
         <dt>instrumento piano</dt><dd>Fuera de una voz, todas las voces suenan con ese instrumento mientras la línea esté escrita; al quitarla, cada una vuelve al suyo. El botón «Todo piano» escribe o quita esta línea. Las voces de percusión sin grados pasan a tocar la base en su registro: bombo en la octava 0, caja en la 1 y charles en la 3.</dd>
@@ -193,6 +205,7 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>tiempo compás</dt><dd>Un paso por cada unidad del compás (corcheas en 9/8). Es el modo por defecto. <code>tiempo compás 1/16</code> usa semicorcheas.</dd>
         <dt>tiempo divide 5</dt><dd>Divide cada compás en n partes iguales: tresillos, quintillos, polirritmos.</dd>
         <dt>tiempo bucle 7/16</dt><dd>Bucle de n pasos de 1/d que ignora los compases: polimetría.</dd>
+        <dt>tiempo libre 4.5 · tiempo libre 2 8 300</dt><dd>Sin pulso ni compás: ataques al azar (proceso de Poisson, como en la música estocástica de Xenakis), 4,5 por segundo en promedio. Con tres números, la tasa pasa de la primera a la segunda en n notas. Determinista con la semilla.</dd>
         <dt>entra 5 · sale 21</dt><dd>Compás en que la voz empieza y compás en que calla.</dd>
         <dt>silencio</dt><dd>Apaga la voz sin borrarla.</dd>
       </dl>
@@ -222,7 +235,8 @@ button:disabled { opacity: 0.4; cursor: default; }
       <dl>
         <dt>grados 0 3 5 7</dt><dd>Cada golpe toma el siguiente grado de la lista. Grados mayores que la escala suben de octava; negativos bajan.</dd>
         <dt>grados norgard · grados recaman mod 7 suma 2</dt><dd>Cada golpe toma el siguiente término de la serie. <code>mod n</code> lo lleva a la escala y <code>suma n</code> transpone.</dd>
-        <dt>octava 1</dt><dd>Desplaza la voz n octavas.</dd>
+        <dt>octava 1</dt><dd>Desplaza la voz n octavas (siempre octavas reales, también en escalas sin octava).</dd>
+        <dt>dispersar 3</dt><dd>Cada nota cae en una de n octavas, sorteada con la semilla: rompe la línea en puntos sueltos (el puntillismo de Webern).</dd>
       </dl>
 
       <h2>Series</h2>
@@ -240,6 +254,8 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>kolakoski</dt><dd>1 2 2 1 1 2 1 2 2… Igual a la lista de sus propias rachas.</dd>
         <dt>pascal · mod</dt><dd>Triángulo de Pascal leído fila por fila; con <code>mod 2</code> da el triángulo de Sierpinski.</dd>
         <dt>automata(30,17,0)</dt><dd>Autómata celular elemental: regla (0–255), ancho del anillo y columna. Columna 0 lee las filas una tras otra; una columna de 1 al ancho lee esa celda, una generación por paso. Varias voces que leen columnas distintas de la misma regla comparten la rejilla. Con anchos pares, algunas reglas se apagan.</dd>
+        <dt>permutaciones(12)</dt><dd>Recorre las n alturas en un orden al azar y no repite ninguna hasta haberlas tocado todas; luego baraja de nuevo. Sin centro tonal posible (el principio dodecafónico, con azar).</dd>
+        <dt>expectativa(0.2, 0.55, 300) mod 24</dt><dd>Elige entre n alturas con un modelo de oyente entrenado con lo que la misma voz ya tocó (notas cercanas, notas frecuentes, lo que suele seguir a lo último). Nivel 0: lo más esperado, se forma un ritornelo; 0,5: azar; 1: lo menos esperado. El nivel va del primer valor al segundo en n notas. Medido desde afuera, el punto menos predecible es el azar (0,5 a 0,6): rechazar lo esperado de forma sistemática vuelve a formar un patrón, y el medidor lo muestra.</dd>
         <dt>logistico(2.9,4,180) · mod</dt><dd>Mapa logístico x → r·x·(1−x). r va del primer valor al segundo en n términos: de un punto fijo a ciclos de 2, 4, 8 y luego caos. <code>mod n</code> reparte x entre 0 y n−1.</dd>
       </dl>
 
@@ -250,6 +266,7 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>brillo 0.6 · distorsión 0.4</dt><dd>Brillo del filtro o del ruido inicial (0–1) y saturación de la voz (0–1).</dd>
         <dt>largo 1.5</dt><dd>Duración de la nota en pasos (bajo y seno).</dd>
         <dt>prob 0.8</dt><dd>Probabilidad de cada golpe, decidida por la semilla.</dd>
+        <dt>vel azar 0.3 0.9</dt><dd>Cada golpe toma una fuerza al azar entre los dos valores: la dinámica deja de marcar frases.</dd>
         <dt>pedal · pedal compás</dt><dd>Solo el piano. <code>pedal</code> deja resonar todo; <code>pedal compás</code> lo levanta y lo vuelve a bajar en cada barra, como se pedalea en la práctica.</dd>
         <dt>espacio 0.5</dt><dd>Cuánto de la voz va a la sala oscura (una reverberación de 3,2 s). Pad, metal, caja, tom, cuerda y seno ya traen algo.</dd>
         <dt>desafinar 7 · vibrato 6</dt><dd>Cents entre los osciladores del pad o del bajo, repartidos hacia arriba y hacia abajo de la altura exacta, y profundidad del vibrato tardío. En 0, la afinación queda pura.</dd>
@@ -315,8 +332,9 @@ function capasPianoNecesarias(p) {
   const capas = new Set();
   for (const v of p.voces) {
     if (v.instr !== 'piano' || v.silencio) continue;
-    capas.add(capaPiano(v.vel).i);
-    if (puedeAcentuar(v.ritmo)) capas.add(capaPiano(Math.min(1, v.vel * 1.3)).i);
+    const [a, b] = v.velAzar || [v.vel, v.vel];
+    const tope = puedeAcentuar(v.ritmo) ? Math.min(1, b * 1.3) : b;
+    for (let i = capaPiano(a).i; i <= capaPiano(tope).i; i++) capas.add(i);
   }
   return [...capas].sort((a, b) => a - b);
 }
@@ -540,6 +558,132 @@ function logistico(args, k, m) {
   return Math.min(m - 1, Math.floor(xs[k] * m));
 }
 
+/* ---------- expectativa: un modelo de oyente ----------
+   Mezcla cuatro expectativas que la psicología de la música documenta (Huron,
+   Pearce): notas cercanas a la anterior, notas que ya sonaron mucho, y lo que
+   suele seguir a la última nota y a las dos últimas (n-gramas aprendidos de lo
+   ya escuchado). Todo se aprende en el momento: no hay estilo previo. */
+const PESOS_EXPECTATIVA = { prox: 0.35, uni: 0.15, bi: 0.25, tri: 0.25 };
+function crearModelo(sigma) {
+  return { sigma, total: 0, uni: new Map(), bi: new Map(), tri: new Map(), h1: null, h2: null };
+}
+function contarCtx(mapa, clave, x) {
+  let c = mapa.get(clave);
+  if (!c) { c = { tot: 0, m: new Map() }; mapa.set(clave, c); }
+  c.tot++; c.m.set(x, (c.m.get(x) || 0) + 1);
+}
+/**
+ * Probabilidad de cada candidato como próxima nota (suman 1). Las cuatro
+ * expectativas se combinan pesando cada una por su certeza: la que predice con
+ * baja entropía manda (como en IDyOM, Pearce 2005).
+ */
+function predecir(mod, cand) {
+  const K = cand.length, a = 0.5;
+  const comp = [];
+  let sp = 0;
+  const pp = new Float64Array(K);
+  for (let i = 0; i < K; i++) { pp[i] = mod.h1 == null ? 1 : Math.exp(-Math.abs(cand[i] - mod.h1) / mod.sigma); sp += pp[i]; }
+  for (let i = 0; i < K; i++) pp[i] /= sp;
+  comp.push([PESOS_EXPECTATIVA.prox, pp]);
+  const bi = mod.h1 == null ? null : mod.bi.get(mod.h1);
+  const tri = mod.h2 == null ? null : mod.tri.get(mod.h2 + '|' + mod.h1);
+  for (const [w, cuenta, tot] of [[PESOS_EXPECTATIVA.uni, x => mod.uni.get(x) || 0, mod.total],
+    [PESOS_EXPECTATIVA.bi, x => (bi ? bi.m.get(x) || 0 : 0), bi ? bi.tot : 0],
+    [PESOS_EXPECTATIVA.tri, x => (tri ? tri.m.get(x) || 0 : 0), tri ? tri.tot : 0]]) {
+    const d = new Float64Array(K);
+    for (let i = 0; i < K; i++) d[i] = (cuenta(cand[i]) + a) / (tot + a * K);
+    comp.push([w, d]);
+  }
+  const Hmax = Math.log2(Math.max(2, K));
+  const P = new Float64Array(K);
+  let sw = 0;
+  for (const [w, d] of comp) {
+    let H = 0;
+    for (let i = 0; i < K; i++) if (d[i] > 0) H -= d[i] * Math.log2(d[i]);
+    const peso = w * Math.pow(Hmax / Math.max(H, 0.02), 2);
+    sw += peso;
+    for (let i = 0; i < K; i++) P[i] += peso * d[i];
+  }
+  for (let i = 0; i < K; i++) P[i] /= sw;
+  return P;
+}
+function aprender(mod, x) {
+  mod.total++;
+  mod.uni.set(x, (mod.uni.get(x) || 0) + 1);
+  if (mod.h1 != null) contarCtx(mod.bi, mod.h1, x);
+  if (mod.h2 != null) contarCtx(mod.tri, mod.h2 + '|' + mod.h1, x);
+  mod.h2 = mod.h1; mod.h1 = x;
+}
+/**
+ * Oyente con alfabeto abierto (escucha alturas en cents): devuelve los bits de
+ * sorpresa de cada nota. Una nota nunca oída paga el escape (PPM, método C).
+ */
+function crearOyente() {
+  const mod = crearModelo(300);
+  const vistos = [], indice = new Map();
+  return {
+    escuchar(x) {
+      const K = vistos.length;
+      let bits = 0;
+      if (mod.total > 0) {
+        const esc = K / (mod.total + K);
+        if (indice.has(x)) bits = -Math.log2((1 - esc) * predecir(mod, vistos)[indice.get(x)]);
+        else bits = -Math.log2(esc) + Math.log2(K + 1);
+      }
+      if (!indice.has(x)) { indice.set(x, vistos.length); vistos.push(x); }
+      aprender(mod, x);
+      return bits;
+    },
+  };
+}
+const _expectativa = new Map();
+/**
+ * Generador de expectativa: elige entre m alturas según el modelo de oyente
+ * entrenado con lo que él mismo ya tocó. nivel 0: lo más esperado, sin repetir
+ * la nota anterior (se forma un ritornelo); 0,5: casi azar uniforme; 1: lo
+ * menos esperado. El nivel va de e1 a e2 en n notas.
+ */
+function expectativa(clave, args, m, k) {
+  const id = clave + '|' + args.join(',') + '|' + m;
+  let e = _expectativa.get(id);
+  if (!e) {
+    e = { vals: [], modelo: crearModelo(Math.max(1, m / 8)), rnd: mulberry32(hash32(id)), cand: Array.from({ length: m }, (_, i) => i) };
+    _expectativa.set(id, e);
+  }
+  const [e1, e2, n] = args;
+  while (e.vals.length <= k) {
+    const j = e.vals.length;
+    const nivel = e1 + (e2 - e1) * Math.min(1, j / n);
+    const beta = 4 * (1 - 2 * nivel);
+    const P = predecir(e.modelo, e.cand);
+    if (e.modelo.h1 != null) P[e.modelo.h1] *= 0.05;   // un ritornelo es un motivo, no una nota repetida
+    let mx = -Infinity;
+    const lq = new Float64Array(m);
+    for (let i = 0; i < m; i++) { lq[i] = beta * Math.log(P[i]); if (lq[i] > mx) mx = lq[i]; }
+    let suma = 0;
+    for (let i = 0; i < m; i++) { lq[i] = Math.exp(lq[i] - mx); suma += lq[i]; }
+    let u = e.rnd() * suma, x = 0;
+    while (x < m - 1 && u >= lq[x]) { u -= lq[x]; x++; }
+    aprender(e.modelo, x);
+    e.vals.push(x);
+  }
+  return e.vals[k];
+}
+const _permutaciones = new Map();
+/** Permutaciones sucesivas de 0..n-1: ninguna nota se repite hasta que sonaron todas. */
+function permutacion(clave, n, k) {
+  const b = Math.floor(k / n), id = clave + '|' + n + '|' + b;
+  let perm = _permutaciones.get(id);
+  if (!perm) {
+    const rnd = mulberry32(hash32(id));
+    perm = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+    if (_permutaciones.size > 5000) _permutaciones.clear();
+    _permutaciones.set(id, perm);
+  }
+  return perm[k - b * n];
+}
+
 /* Registro: argumentos admitidos, si crece sin límite y cómo se calcula. */
 const SERIES = {
   fib:        { crece: true,  args: [], valor: (k, a, m) => fibMod(k, m) },
@@ -558,6 +702,11 @@ const SERIES = {
                 valor: (k, a) => automata(a[0], a[1], a[2], k) },
   logistico:  { crece: true,  args: [{ def: 3.7, min: 0, max: 4 }, { def: null, min: 0, max: 4 }, { def: 256, min: 1, max: 1e6, entero: true }],
                 valor: (k, a, m) => logistico(a, k, m) },
+  // con semilla: dependen de la semilla de la partitura y del nombre de la voz
+  permutaciones: { crece: false, args: [{ def: 12, min: 2, max: 128, entero: true }],
+                valor: (k, a, m, s) => permutacion(s.clave, a[0], k) },
+  expectativa: { crece: true, args: [{ def: 1, min: 0, max: 1 }, { def: null, min: 0, max: 1 }, { def: 256, min: 1, max: 1e6, entero: true }],
+                valor: (k, a, m, s) => expectativa(s.clave, a, m, k) },
 };
 const ALIAS_SERIES = {
   fibonacci: 'fib', 'nørgard': 'norgard', norgaard: 'norgard', 'nørgaard': 'norgard', miraydi: 'conway',
@@ -585,10 +734,10 @@ function parsearSerie(tok) {
     args.push(v);
   }
   if (nombre === 'automata' && args[2] > args[1]) return { error: `la columna de «automata» va de 1 al ancho (${args[1]}); 0 lee las filas` };
-  if (nombre === 'logistico' && args[1] == null) args[1] = args[0];
+  if ((nombre === 'logistico' || nombre === 'expectativa') && args[1] == null) args[1] = args[0];
   return { nombre, args };
 }
-function valorSerie(s, k, m) { return SERIES[s.nombre].valor(k, s.args, m); }
+function valorSerie(s, k, m) { return SERIES[s.nombre].valor(k, s.args, m, s); }
 
 function valorGrado(g, h) {
   let v = g.tipo === 'lista' ? g.valores[h % g.valores.length] : valorSerie(g.serie, h, g.mod);
@@ -608,6 +757,8 @@ function ratiosAfinacion(af) {
   if (af.tipo === 'razones') return ordenarUnicos(af.valores);
   if (af.tipo === 'cents') return ordenarUnicos(af.valores.map(c => Math.pow(2, c / 1200)));
   if (af.tipo === 'generador') return ordenarUnicos(Array.from({ length: af.n }, (_, k) => Math.pow(af.r, k)));
+  if (af.tipo === 'paso') return [1];                                                   // sin octava: un solo paso que se repite
+  if (af.tipo === 'tritava') return Array.from({ length: af.n }, (_, i) => Math.pow(3, i / af.n));   // Bohlen-Pierce
   if (af.tipo === 'stern') {
     // cocientes s(k)/s(k+1): recorren todas las fracciones; se pliegan a la octava
     // y se guardan las n primeras distintas (las más simples aparecen antes)
@@ -620,15 +771,21 @@ function ratiosAfinacion(af) {
   }
   throw new Error('afinación desconocida');
 }
-/** Frecuencia de un grado; los grados fuera de 0..n-1 cambian de octava. */
-function frecuencia(ratios, base, grado) {
+/** Intervalo en que se repite la escala: la octava, salvo en «paso» (el paso mismo) y «tritava» (3/1). */
+function periodoAfinacion(af) {
+  if (af.tipo === 'paso') return Math.pow(2, af.c / 1200);
+  if (af.tipo === 'tritava') return 3;
+  return 2;
+}
+/** Frecuencia de un grado; los grados fuera de 0..n-1 suben o bajan un período. */
+function frecuencia(ratios, base, grado, periodo = 2) {
   const n = ratios.length;
   const o = Math.floor(grado / n);
-  return base * Math.pow(2, o) * ratios[grado - o * n];
+  return base * Math.pow(periodo, o) * ratios[grado - o * n];
 }
 
 /* ---------- parser ---------- */
-const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio', 'pedal',
+const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio', 'pedal', 'dispersar',
   ...Object.keys(PARAMS_NUM)]);
 
 /** Lee «mod n» y «suma n» a partir de args[i]; devuelve el índice siguiente o -1 si hubo error. */
@@ -644,6 +801,7 @@ function leerModSuma(dest, clave, args, i, err) {
   return i + 2;
 }
 function errorSerieSinMod(s) {
+  if (s.nombre === 'expectativa') return '«expectativa» necesita «mod n»: el número de alturas entre las que elige';
   return `la serie «${s.nombre}» crece sin límite: añade «mod n»${s.nombre === 'logistico' ? ' (reparte el valor entre 0 y n−1)' : ''}`;
 }
 
@@ -773,6 +931,14 @@ function parsear(texto) {
           if (!(r > 0) || Math.abs(Math.log2(r) - Math.round(Math.log2(r))) < 1e-9) err('«afinación generador r n»: r es una razón como 3/2, 7/4 o phi, que no sea una octava');
           else if (!(n >= 1 && n <= 53)) err('«afinación generador r n»: n entre 1 y 53');
           else p.afinacion = { tipo: 'generador', r, n, nombre: args[1] };
+        } else if (tipo === 'paso') {
+          const c = numero(args[1]);
+          if (!(c >= 1 && c <= 2400)) err('«afinación paso c»: el tamaño del paso en cents (1–2400); la escala nunca vuelve a la octava');
+          else p.afinacion = { tipo: 'paso', c };
+        } else if (tipo === 'tritava') {
+          const n = args[1] == null ? 13 : entero(args[1]);
+          if (!(n >= 1 && n <= 64)) err('«afinación tritava n»: divide la tritava (3/1) en n pasos iguales, entre 1 y 64');
+          else p.afinacion = { tipo: 'tritava', n };
         } else if (tipo === 'stern') {
           const n = args[1] == null ? 7 : entero(args[1]);
           if (!(n >= 1 && n <= 64)) err('«afinación stern n»: n entre 1 y 64');
@@ -782,7 +948,7 @@ function parsear(texto) {
           if (!vals.length || vals.some(v => Number.isNaN(v) || (tipo === 'razones' && v <= 0))) {
             err(`«afinación ${tipo}» espera una lista de ${tipo === 'razones' ? 'razones como 1/1 9/8 3/2' : 'valores en cents'}`);
           } else p.afinacion = { tipo, valores: vals };
-        } else err('afinación: usa edo n, pitagórica n, generador r n, stern n, razones a/b… o cents c…');
+        } else err('afinación: usa edo n, pitagórica n, generador r n, stern n, paso c, tritava n, razones a/b… o cents c…');
       } else if (clave === 'compas') {
         const cs = [];
         let ok = args.length > 0;
@@ -847,7 +1013,12 @@ function parsear(texto) {
             if (!m || Number(m[1]) < 1 || Number(m[1]) > 256 || Number(m[2]) < 1 || Number(m[2]) > 64) {
               err('«tiempo bucle n/d»: n pasos de 1/d de redonda (p. ej. bucle 7/16)');
             } else voz.tiempo = { modo: 'bucle', n: Number(m[1]), d: Number(m[2]) };
-          } else err('«tiempo» acepta: compás [1/u], divide n, bucle n/d');
+          } else if (modo === 'libre') {
+            const l1 = numero(args[1]), l2 = args[2] != null ? numero(args[2]) : l1, nr = args[3] != null ? entero(args[3]) : 1;
+            if (!(l1 > 0 && l1 <= 40) || !(l2 > 0 && l2 <= 40) || !(nr >= 1)) {
+              err('«tiempo libre λ»: ataques por segundo (0–40), sin pulso; «tiempo libre λ1 λ2 n» pasa de λ1 a λ2 en n notas');
+            } else voz.tiempo = { modo: 'libre', l1, l2, nr };
+          } else err('«tiempo» acepta: compás [1/u], divide n, bucle n/d, libre λ');
         } else if (clave === 'ritmo') {
           const r = parsearRitmo(args, err);
           if (r) voz.ritmo = r;
@@ -867,6 +1038,14 @@ function parsear(texto) {
           else if (modo === 'compas') voz.pedal = 'compas';
           else if (modo === 'no') voz.pedal = null;
           else err('«pedal» acepta: pedal (deja resonar), pedal compás (se renueva en cada compás) o pedal no');
+        } else if (clave === 'dispersar') {
+          const v = entero(args[0]);
+          if (!(v >= 1 && v <= 6)) err('«dispersar n»: cada nota cae en una de n octavas, sorteada con la semilla (1–6)');
+          else voz.dispersar = v;
+        } else if (clave === 'vel' && normalizar(args[0] || '') === 'azar') {
+          const a = numero(args[1]), b = numero(args[2]);
+          if (!(a >= 0 && b <= 1 && a <= b)) err('«vel azar a b»: cada golpe toma una fuerza entre a y b (0–1), sorteada con la semilla');
+          else voz.velAzar = [a, b];
         } else if (clave === 'silencio') {
           voz.silencio = true;
         } else {
@@ -894,6 +1073,12 @@ function parsear(texto) {
       v.octava = REGISTRO_PERCUSION[v.instrPropio] ?? 0;
     }
     const def = INSTRUMENTOS[v.instr];
+    for (const [s, uso] of [[v.ritmo && v.ritmo.serie, 'ritmo'], [v.grados && v.grados.serie, 'grados']]) {
+      if (s) s.clave = `${p.semilla}|${v.nombre}|${uso}`;     // series con azar: distintas por voz, fijas por semilla
+    }
+    if (v.tiempo.modo === 'libre' && v.ritmo.gen === 'euclides' && v.ritmo.n == null) {
+      errores.push({ linea: v.lineaTiempo, msg: 'con «tiempo libre» no hay compás que repartir: usa euclides(k,n), golpes, una serie o todos' });
+    }
     v.vol = v.params.vol ?? def.vol;
     v.pan = v.params.pan ?? 0;
     v.decae = v.params.decae ?? def.decae;
@@ -932,6 +1117,7 @@ function parsear(texto) {
   }
   if (!p.voces.length && !errores.length) avisos.push({ linea: 0, msg: 'la partitura no tiene voces' });
   p.ratios = ratiosAfinacion(p.afinacion);
+  p.periodo = periodoAfinacion(p.afinacion);
   return { partitura: errores.length ? null : p, errores, avisos };
 }
 
@@ -984,6 +1170,20 @@ function crearCursor(p, linea, vi, c0) {
   const pasosAntes = c => { const k = Math.floor(c / P); return k * SP + prefPasos[c - k * P]; };
 
   const pasoBucle = T.modo === 'bucle' ? linea.W / T.d : 0;
+  // tiempo libre: ataques de Poisson, deterministas, siempre contados desde el inicio de la pieza
+  const libre = T.modo === 'libre';
+  let tLibre = 0, kLibre = 0, gapSig = 0, rndLibre = null;
+  const gapLibre = k => {
+    const lam = T.l1 + (T.l2 - T.l1) * Math.min(1, k / T.nr);
+    return Math.max(0.012, -Math.log(1 - rndLibre()) / lam);
+  };
+  if (libre) {
+    rndLibre = mulberry32(hash32(`${p.semilla}|${voz.nombre}|libre`));
+    gapSig = gapLibre(0);
+    const t0 = linea.inicio(c0);
+    while (tLibre < t0 - 1e-9) { tLibre += gapSig; kLibre++; gapSig = gapLibre(kLibre); }
+  }
+  const oyente = voz.melodico ? crearOyente() : null;
   const st = {
     c: c0, p: 0,
     i: T.modo === 'bucle' ? Math.ceil(linea.inicio(c0) / pasoBucle - 1e-9) : 0,
@@ -1045,7 +1245,12 @@ function crearCursor(p, linea, vi, c0) {
     const out = [];
     for (let guarda = 0; guarda < 200000; guarda++) {
       let t, dur, c, g, nMarco, pMarco;
-      if (T.modo === 'bucle') {
+      if (libre) {
+        t = tLibre; dur = gapSig;
+        if (t >= tFin) break;
+        c = linea.compasEn(t); g = kLibre; nMarco = r.n || 1; pMarco = mod(kLibre, nMarco);
+        tLibre += gapSig; kLibre++; gapSig = gapLibre(kLibre);
+      } else if (T.modo === 'bucle') {
         t = st.i * pasoBucle; dur = pasoBucle;
         if (t >= tFin) break;
         c = linea.compasEn(t); g = st.i; nMarco = T.n; pMarco = mod(st.i, T.n);
@@ -1063,16 +1268,19 @@ function crearCursor(p, linea, vi, c0) {
       let v = golpe(g, nMarco, pMarco);
       if (!v) continue;
       if (voz.prob < 1 && azar(p.semilla, voz.nombre, g) >= voz.prob) continue;
-      let grado = null, freq = null;
+      let grado = null, freq = null, sorpresa = null;
       if (voz.melodico) {
         grado = (voz.grados ? valorGrado(voz.grados, st.h) : 0);
-        freq = frecuencia(p.ratios, p.base, grado + voz.octava * p.ratios.length);
+        const disp = voz.dispersar ? Math.floor(azar(p.semilla, voz.nombre, 'dispersar', st.h) * voz.dispersar) : 0;
+        freq = frecuencia(p.ratios, p.base, grado, p.periodo) * Math.pow(2, voz.octava + disp);
+        sorpresa = oyente.escuchar(Math.round(1200 * Math.log2(freq / p.base)));
       }
+      const velBase = voz.velAzar ? voz.velAzar[0] + (voz.velAzar[1] - voz.velAzar[0]) * azar(p.semilla, voz.nombre, 'vel', st.h) : voz.vel;
       st.h++;
       out.push({
         t, dur: dur * multDur, c, g, voz: vi, acento: v === 2, finCompas: linea.inicio(c + 1),
-        vel: v === 2 ? Math.min(1, voz.vel * 1.3) : voz.vel,
-        grado, freq,
+        vel: v === 2 ? Math.min(1, velBase * 1.3) : velBase,
+        grado, freq, sorpresa,
       });
     }
     return out;
@@ -1086,6 +1294,52 @@ function eventosEntre(p, linea, cIni, cFin) {
   const evs = [];
   p.voces.forEach((_, vi) => { evs.push(...crearCursor(p, linea, vi, cIni).avanzarHasta(tFin)); });
   return evs.sort((a, b) => a.t - b.t || a.voz - b.voz);
+}
+
+/* ---------- medidor ---------- */
+function entropia(valores) {
+  const c = new Map();
+  for (const v of valores) c.set(v, (c.get(v) || 0) + 1);
+  let h = 0;
+  for (const n of c.values()) { const q = n / valores.length; h -= q * Math.log2(q); }
+  return h;
+}
+function medirVoz(e, melodico, base) {
+  const r = { notas: e.length, alturas: null, alturasMax: null, sorpresa: null, relativa: null, motivos: null, tiempo: null };
+  const ts = [...new Set(e.map(x => Math.round(x.t * 1000)))].sort((a, b) => a - b);
+  if (ts.length > 2) r.tiempo = entropia(ts.slice(1).map((t, i) => Math.round((t - ts[i]) / 10)));
+  if (melodico && e.length) {
+    const alt = e.map(x => Math.round(1200 * Math.log2(x.freq / base)));
+    r.alturas = entropia(alt);
+    r.alturasMax = Math.log2(new Set(alt).size);
+    r.sorpresa = e.reduce((s, x) => s + x.sorpresa, 0) / e.length;
+    r.relativa = r.alturasMax > 0 ? r.sorpresa / r.alturasMax : null;
+    const iv = alt.slice(1).map((a, i) => a - alt[i]);
+    const vistos = new Set();
+    let rep = 0, tot = 0;
+    for (let i = 0; i + 3 <= iv.length; i++) { const k = iv.slice(i, i + 3).join(','); tot++; if (vistos.has(k)) rep++; vistos.add(k); }
+    if (tot) r.motivos = rep / tot;
+  }
+  return r;
+}
+/**
+ * Mide cuánto «significa» cada voz: entropía de alturas (bits), sorpresa media
+ * según el oyente (bits por nota; relativa: dividida por la del azar uniforme
+ * sobre esas alturas), motivos de 4 notas repetidos y variedad de los
+ * intervalos entre ataques (entropía, a 10 ms).
+ */
+function analizar(p, linea, nComp) {
+  const evs = eventosEntre(p, linea, 0, nComp);
+  const filas = p.voces.map((v, vi) => medirVoz(evs.filter(x => x.voz === vi), v.melodico, p.base));
+  const mel = evs.filter(x => p.voces[x.voz].melodico);
+  const total = medirVoz(mel, mel.length > 0, p.base);
+  if (mel.length) {                                   // la sorpresa total es la de cada oyente, promediada
+    total.motivos = null;
+    const pesos = filas.filter((f, i) => p.voces[i].melodico && f.notas);
+    total.motivos = pesos.reduce((s, f) => s + (f.motivos || 0) * f.notas, 0) / Math.max(1, pesos.reduce((s, f) => s + f.notas, 0));
+    total.relativa = pesos.reduce((s, f) => s + (f.relativa || 0) * f.notas, 0) / Math.max(1, pesos.reduce((s, f) => s + f.notas, 0));
+  }
+  return { filas, total, compases: nComp };
 }
 
 /* ---------- síntesis pura: cuerda pulsada (Karplus-Strong) ---------- */
@@ -1139,7 +1393,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     INSTRUMENTOS, CAPAS_PIANO, capaPiano, puedeAcentuar, capasPianoNecesarias, SERIES, parsearSerie, valorSerie, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
     parsearGolpes, valorGrado, ratiosAfinacion, frecuencia, parsear, crearLinea, crearCursor,
-    eventosEntre, cuerdaKS, codificarWAV,
+    eventosEntre, cuerdaKS, codificarWAV, periodoAfinacion, crearModelo, predecir, aprender, crearOyente, expectativa, permutacion,
+    analizar, medirVoz, entropia,
   };
 }
 </script>
@@ -2211,6 +2466,121 @@ voz pulso piano
   pedal compás
   vel 0.4
 ` },
+{ nombre: "Tres grados de expectativa", grupo: "A-significantes", texto: `# Tres grados de expectativa
+# Tres voces eligen sus notas con el mismo generador y el mismo ritmo; solo
+# cambia el nivel de expectativa. La primera (0,15) sigue lo más esperado y
+# arma un ritornelo; la segunda (0,5) es azar; la tercera (1) elige siempre
+# lo menos esperado. Escúchalas por turno y mira el medidor: la tercera no es
+# la más imprevisible. Rechazar lo esperado de forma sistemática también es
+# una regla, y el oído la aprende.
+tempo 96 · semilla 21
+afinación edo 12
+base 130.81                    # do3
+compás 4/4
+duración 24
+
+voz esperada piano
+  tiempo compás 1/8
+  grados expectativa(0.15) mod 12
+  octava 1
+  sale 9
+voz azar piano
+  tiempo compás 1/8
+  grados expectativa(0.5) mod 12
+  octava 1
+  entra 9 · sale 17
+voz inesperada piano
+  tiempo compás 1/8
+  grados expectativa(1) mod 12
+  octava 1
+  entra 17
+` },
+{ nombre: "Del ritornelo a la deriva", grupo: "A-significantes", texto: `# Del ritornelo a la deriva
+# Un proceso en tres capas. La melodía empieza en un ritornelo (expectativa
+# 0,1) y en 200 notas llega al punto de máxima imprevisibilidad (0,55). El
+# bajo marca la tónica y se retira en el compás 13. Desde el compás 11 entra
+# una voz sin pulso (ataques de Poisson), cada vez más densa, con notas
+# esparcidas en tres octavas y fuerzas al azar.
+tempo 92 · semilla 22
+afinación edo 12
+base 65.41                     # do2
+compás 4/4
+duración 32
+
+voz melodia piano
+  tiempo compás 1/8
+  grados expectativa(0.1, 0.55, 200) mod 12
+  octava 2
+  vel 0.6
+voz tonica piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.5
+  sale 13
+voz deriva piano
+  tiempo libre 1 6 150
+  grados expectativa(0.55) mod 24
+  dispersar 3
+  octava 1
+  vel azar 0.3 0.8
+  entra 11
+` },
+{ nombre: "Máquina a-significante", grupo: "A-significantes", texto: `# Máquina a-significante
+# Todas las pistas con que el oído construye sentido, desactivadas a la vez:
+# una escala sin octava (pasos de 78 cents, la escala alfa de Wendy Carlos),
+# ataques sin pulso (Poisson), alturas que no se repiten antes de agotarse
+# o que se eligen en el punto de máxima imprevisibilidad, notas esparcidas
+# en varias octavas y fuerzas sin relación con nada. El medidor debería
+# mostrar una sorpresa relativa cercana a 1, casi ningún motivo repetido y
+# un tiempo de entropía alta.
+tempo 60 · semilla 23
+afinación paso 78
+base 65.41
+duración 24
+
+voz una piano
+  tiempo libre 3.5
+  grados permutaciones(15)       # 15 pasos: 1170 cents, una casi octava que no cierra
+  dispersar 4
+  octava 1
+  vel azar 0.25 0.8
+voz otra piano
+  tiempo libre 2.2
+  grados expectativa(0.55) mod 31
+  dispersar 3
+  octava 1
+  vel azar 0.2 0.7
+voz grave piano
+  tiempo libre 0.4
+  grados permutaciones(7)
+  vel azar 0.35 0.6
+` },
+{ nombre: "Bohlen-Pierce", grupo: "A-significantes", texto: `# Bohlen-Pierce
+# Una escala que se repite cada tritava (3/1) en lugar de cada octava,
+# dividida en 13 pasos iguales: la propuso Heinz Bohlen en 1972 y, por su
+# cuenta, John Pierce. Aquí hay pulso y compás, pero la altura pierde su
+# identidad: ninguna nota vuelve «una octava más arriba». Dos voces barajan
+# los 13 pasos sin repetir ninguno hasta tocarlos todos, cada una a su ritmo.
+tempo 84 · semilla 24
+afinación tritava 13
+base 65.41
+compás 7/8
+duración 24
+
+voz lenta piano
+  ritmo euclides(4)
+  grados permutaciones(13)
+  octava 1
+  vel 0.55
+voz rapida piano
+  tiempo compás 1/16
+  ritmo euclides(9)
+  grados permutaciones(13)
+  octava 2
+  vel 0.5
+` },
 { nombre: "987 · Fibonacci", grupo: "Sintetizadores", texto: `# 987 · Fibonacci en la métrica
 # Los compases recorren 9/8, 8/8 y 7/8: 9-8-7 forma 987,
 # término 16 de la serie. El bajo lee Fibonacci módulo 7
@@ -2519,7 +2889,7 @@ const $ = s => document.querySelector(s);
 const ui = {
   titulo: $('#titulo'), estado: $('#estado'), aviso: $('#aviso'),
   tocar: $('#b-tocar'), parar: $('#b-parar'), evaluar: $('#b-evaluar'), piano: $('#b-piano'), desde: $('#desde'),
-  lienzo: $('#lienzo'), regla: $('#regla'), afinTxt: $('#afin-txt'),
+  lienzo: $('#lienzo'), regla: $('#regla'), afinTxt: $('#afin-txt'), medidor: $('#medidor'),
   ejemplos: $('#ejemplos'), abrir: $('#b-abrir'), archivo: $('#archivo'), copiar: $('#b-copiar'),
   guardar: $('#b-guardar'), wav: $('#b-wav'),
   texto: $('#partitura'), numeros: $('#numeros'), mensajes: $('#mensajes'), referencia: $('#referencia'),
@@ -2612,7 +2982,7 @@ function mostrarMensajes(r) {
 function evaluarTexto() {
   const r = parsear(ui.texto.value);
   mostrarMensajes(r);
-  if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); asegurarPiano(r.partitura); }
+  if (r.partitura) { S.ultimo = r.partitura; S.vista = null; dibujarRegla(r.partitura); dibujarMedidor(r.partitura); asegurarPiano(r.partitura); }
   if (r.partitura) ui.piano.setAttribute('aria-pressed', String(r.partitura.instrumentoGlobal === 'piano'));
   guardarBorrador();
   return r;
@@ -2709,7 +3079,7 @@ function tick() {
           const tA = ev.t + S.epoca;
           if (tA < ahora - 0.005) continue;       // llegó tarde: mejor callar que sonar fuera de tiempo
           if (programarEvento(S.ctx, S.p, S.buses, S.rec, ev, tA)) {
-            S.sonados.push({ tA, voz: ev.voz, grado: ev.grado, dur: ev.dur });
+            S.sonados.push({ tA, voz: ev.voz, grado: ev.grado, dur: ev.dur, sorpresa: ev.sorpresa });
           }
         }
       }
@@ -2908,10 +3278,14 @@ function dibujar() {
       const y = cabH + s.voz * filaH, x = X(ts);
       const w = Math.min(Math.max(2, ((v.melodico ? s.dur * v.largo : s.dur * 0.45) / (t1 - t0)) * util - 1), ancho - der - x);
       const vivo = tAudio - s.tA < 0.09;
+      // intensidad = sorpresa de la nota para el oyente: pálido lo esperado, lleno lo inesperado
+      const alfa = s.sorpresa == null || vivo ? 1 : 0.22 + 0.78 * Math.min(1, s.sorpresa / 6);
+      g.globalAlpha = alfa;
       g.fillStyle = vivo ? '#111111' : COLORES[s.voz % COLORES.length];
       g.fillRect(x, y + 5, w, filaH - 10);
+      g.globalAlpha = 1;
       if (s.grado != null && w > 16) {
-        g.fillStyle = '#ffffff';
+        g.fillStyle = alfa < 0.6 ? '#111111' : '#ffffff';
         g.fillText(String(s.grado), x + 3, y + filaH / 2 + 0.5);
       }
     }
@@ -2937,20 +3311,27 @@ function animar() {
   raf = requestAnimationFrame(paso);
 }
 
-/** Regla de afinación: los grados en cents sobre la octava, con 12-EDO de referencia. */
+/** Regla de afinación: los grados en cents, con 12-EDO de referencia. En escalas sin octava se extiende hasta su período. */
 function dibujarRegla(p) {
   const lz = prepararLienzo(ui.regla, 50);
   if (!lz) return;
   const { g, ancho } = lz;
-  const izq = 8, der = 28, y = 30;
-  const X = c => izq + (c / 1200) * (ancho - izq - der);
+  const periodoC = 1200 * Math.log2(p.periodo);
+  const tramo = Math.max(1200, periodoC);
+  const izq = 8, der = 34, y = 30;
+  const X = c => izq + (c / tramo) * (ancho - izq - der);
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, ancho, 50);
   g.font = FUENTE; g.textBaseline = 'middle';
   g.strokeStyle = '#c9ccc0'; g.lineWidth = 1;
-  for (let k = 0; k <= 12; k++) { const x = Math.round(X(k * 100)) + 0.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 7); g.stroke(); }
+  for (let k = 0; k * 100 <= tramo; k++) { const x = Math.round(X(k * 100)) + 0.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 7); g.stroke(); }
   g.strokeStyle = '#111111';
-  g.beginPath(); g.moveTo(X(0), y + 0.5); g.lineTo(X(1200), y + 0.5); g.stroke();
-  const cents = p.ratios.map(r => 1200 * Math.log2(r));
+  g.beginPath(); g.moveTo(X(0), y + 0.5); g.lineTo(X(tramo), y + 0.5); g.stroke();
+  const cents = [];
+  for (let gr = 0; gr < 400; gr++) {
+    const c = 1200 * Math.log2(frecuencia(p.ratios, 1, gr, p.periodo));
+    if (c > tramo + 0.01) break;
+    cents.push(c);
+  }
   const minSep = cents.length > 1 ? Math.min(...cents.slice(1).map((c, i) => X(c) - X(cents[i]))) : 99;
   const cadaCuanto = minSep < 16 ? Math.ceil(16 / Math.max(1, minSep)) : 1;
   g.textAlign = 'center';
@@ -2961,14 +3342,42 @@ function dibujarRegla(p) {
     if (i % cadaCuanto === 0) { g.fillStyle = '#586a45'; g.fillText(String(i), x, y - 17); }
   });
   g.fillStyle = '#62655a';
-  g.fillText('8ª', X(1200) + 13, y);
+  if (tramo > 1200) {                         // la octava queda dentro: se marca aparte
+    const x = Math.round(X(1200)) + 0.5;
+    g.strokeStyle = '#b06a36'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x, y - 3); g.lineTo(x, y + 9); g.stroke();
+    g.fillStyle = '#b06a36'; g.fillText('8ª', x, y + 16);
+    g.fillStyle = '#62655a'; g.fillText('3/1', X(tramo) + 16, y);
+  } else g.fillText('8ª', X(1200) + 13, y);
   g.textAlign = 'left';
   const af = p.afinacion;
   const nombre = af.tipo === 'edo' ? `${af.n}-EDO` : af.tipo === 'pitagorica' ? `pitagórica de ${af.n} quintas`
     : af.tipo === 'generador' ? `generador ${af.nombre} apilado ${af.n} veces`
     : af.tipo === 'stern' ? `las ${af.n} razones más simples de Stern`
+    : af.tipo === 'paso' ? `pasos de ${af.c} cents, sin octava`
+    : af.tipo === 'tritava' ? `Bohlen-Pierce: la tritava (3/1) en ${af.n} pasos, sin octava`
     : af.tipo === 'razones' ? 'razones justas' : 'cents';
-  ui.afinTxt.textContent = `${nombre} · ${p.ratios.length} grados por octava · grado 0 = ${p.base} Hz · las marcas grises son 12-EDO`;
+  const porPeriodo = af.tipo === 'paso' ? '' : af.tipo === 'tritava' ? ` · ${p.ratios.length} grados por tritava` : ` · ${p.ratios.length} grados por octava`;
+  ui.afinTxt.textContent = `${nombre}${porPeriodo} · grado 0 = ${p.base} Hz · las marcas grises son 12-EDO`;
+}
+
+/* ---------- medidor ---------- */
+const coma = (x, d = 2) => x == null ? '—' : x.toFixed(d).replace('.', ',');
+function dibujarMedidor(p) {
+  const n = p.duracion || 32;
+  let a;
+  try { a = analizar(p, crearLinea(p), n); } catch (e) { ui.medidor.textContent = ''; return; }
+  const fila = (nombre, r, clase) => `<tr${clase ? ` class="${clase}"` : ''}><th scope="row">${nombre}</th><td>${r.notas}</td>`
+    + `<td>${r.alturas == null ? '—' : `${coma(r.alturas)} / ${coma(r.alturasMax)}`}</td>`
+    + `<td>${r.sorpresa == null && r.relativa == null ? '—' : `${r.sorpresa == null ? '' : coma(r.sorpresa) + ' b · '}${coma(r.relativa)}`}</td>`
+    + `<td>${r.motivos == null ? '—' : Math.round(100 * r.motivos) + ' %'}</td>`
+    + `<td>${coma(r.tiempo)}</td></tr>`;
+  const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const cuerpo = p.voces.map((v, i) => fila(esc(v.nombre), a.filas[i])).join('') + (p.voces.length > 1 ? fila('todas', a.total, 'total') : '');
+  ui.medidor.innerHTML = `<h2 class="etiqueta">Medidor · ${n} compases</h2><div class="tabla"><table>
+<thead><tr><th scope="col">voz</th><th scope="col">notas</th><th scope="col">alturas</th><th scope="col">sorpresa</th><th scope="col">motivos</th><th scope="col">tiempo</th></tr></thead>
+<tbody>${cuerpo}</tbody></table></div>
+<p class="pie"><b>alturas</b>: entropía en bits / la máxima con esas alturas. <b>sorpresa</b>: bits por nota para un oyente que aprende lo que escucha, y relativa al azar uniforme (1 ≈ azar; menos, predecible). <b>motivos</b>: grupos de 4 notas que repiten intervalos ya oídos. <b>tiempo</b>: entropía de los intervalos entre ataques (0 = pulso fijo). En la línea de tiempo, cada nota tocada es más intensa cuanto más sorprende.</p>`;
 }
 
 /* ---------- archivos ---------- */
