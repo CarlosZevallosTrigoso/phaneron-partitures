@@ -2466,6 +2466,106 @@ voz pulso piano
   pedal compás
   vel 0.4
 ` },
+{ nombre: "Para leer I · Arpegio", grupo: "Para leer", texto: `# Para leer I · Arpegio
+# No está demostrado que una música sea óptima para leer. Esta aplica lo
+# que la investigación sobre sonido irrelevante sí sostiene: lo que distrae
+# es el cambio impredecible (habla, letra, saltos, acentos). Por eso tiene
+# pocas notas por segundo, fuerza suave y constante, sin acentos, sin agudos
+# brillantes y una pentatónica justa, sin semitonos ni batidos. No tiene
+# final: suena hasta que la detienes. Úsala a volumen bajo.
+# Un solo acorde que nunca cambia y un arpegio de cuatro notas que se repite
+# igual, una nota por segundo aproximadamente.
+tempo 52 · semilla 31
+afinación razones 1/1 9/8 5/4 3/2 5/3     # pentatónica justa
+base 65.41                                # do2
+compás 4/4
+
+voz arpegio piano
+  tiempo compás 1/4
+  grados 0 2 3 2
+  octava 2
+  pedal compás
+  vel 0.3
+  brillo 0.35
+  vol 1.3
+voz bajo piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.3
+  brillo 0.35
+  vol 1.3
+` },
+{ nombre: "Para leer II · Cuatro acordes", grupo: "Para leer", texto: `# Para leer II · Cuatro acordes
+# No está demostrado que una música sea óptima para leer. Esta aplica lo
+# que la investigación sobre sonido irrelevante sí sostiene: lo que distrae
+# es el cambio impredecible (habla, letra, saltos, acentos). Por eso tiene
+# pocas notas por segundo, fuerza suave y constante, sin acentos, sin agudos
+# brillantes y una pentatónica justa, sin semitonos ni batidos. No tiene
+# final: suena hasta que la detienes. Úsala a volumen bajo.
+# Un motivo de ocho notas, por grados conjuntos, que no cambia nunca; debajo,
+# el bajo recorre cuatro notas, dos compases cada una, y vuelve a empezar.
+# Todo el ciclo dura 8 compases (unos 42 segundos).
+tempo 46 · semilla 32
+afinación razones 1/1 9/8 5/4 3/2 5/3
+base 65.41
+compás 4/4
+
+voz motivo piano
+  tiempo compás 1/8
+  grados 2 3 4 3 2 1 2 3
+  octava 2
+  vel 0.3
+  brillo 0.35
+  vol 1.3
+voz bajo piano
+  tiempo divide 1
+  grados 0 0 4 4 3 3 1 1
+  octava 1
+  pedal compás
+  vel 0.32
+  brillo 0.35
+  vol 1.3
+` },
+{ nombre: "Para leer III · Bordón", grupo: "Para leer", texto: `# Para leer III · Bordón
+# No está demostrado que una música sea óptima para leer. Esta aplica lo
+# que la investigación sobre sonido irrelevante sí sostiene: lo que distrae
+# es el cambio impredecible (habla, letra, saltos, acentos). Por eso tiene
+# pocas notas por segundo, fuerza suave y constante, sin acentos, sin agudos
+# brillantes y una pentatónica justa, sin semitonos ni batidos. No tiene
+# final: suena hasta que la detienes. Úsala a volumen bajo.
+# Lo más cercano a un sonido estable: una quinta grave que se renueva cada
+# nueve segundos y, encima, una nota suave cada cuatro segundos y medio que
+# sube y baja un paso.
+tempo 40 · semilla 33
+afinación razones 1/1 9/8 5/4 3/2 5/3
+base 65.41
+compás 6/4
+
+voz fundamental piano
+  tiempo divide 1
+  grados 0
+  pedal compás
+  vel 0.3
+  brillo 0.3
+  vol 1.3
+voz quinta piano
+  tiempo divide 1
+  grados 3
+  pedal compás
+  vel 0.28
+  brillo 0.3
+  vol 1.3
+voz arriba piano
+  tiempo divide 2
+  grados 2 3 2 1
+  octava 2
+  pedal compás
+  vel 0.26
+  brillo 0.35
+  vol 1.3
+` },
 { nombre: "Tres grados de expectativa", grupo: "A-significantes", texto: `# Tres grados de expectativa
 # Tres voces eligen sus notas con el mismo generador y el mismo ritmo; solo
 # cambia el nivel de expectativa. La primera (0,15) sigue lo más esperado y

@@ -1,0 +1,30 @@
+# Para leer I · Arpegio
+# No está demostrado que una música sea óptima para leer. Esta aplica lo
+# que la investigación sobre sonido irrelevante sí sostiene: lo que distrae
+# es el cambio impredecible (habla, letra, saltos, acentos). Por eso tiene
+# pocas notas por segundo, fuerza suave y constante, sin acentos, sin agudos
+# brillantes y una pentatónica justa, sin semitonos ni batidos. No tiene
+# final: suena hasta que la detienes. Úsala a volumen bajo.
+# Un solo acorde que nunca cambia y un arpegio de cuatro notas que se repite
+# igual, una nota por segundo aproximadamente.
+tempo 52 · semilla 31
+afinación razones 1/1 9/8 5/4 3/2 5/3     # pentatónica justa
+base 65.41                                # do2
+compás 4/4
+
+voz arpegio piano
+  tiempo compás 1/4
+  grados 0 2 3 2
+  octava 2
+  pedal compás
+  vel 0.3
+  brillo 0.35
+  vol 1.3
+voz bajo piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.3
+  brillo 0.35
+  vol 1.3

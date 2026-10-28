@@ -1,0 +1,30 @@
+# Para leer II · Cuatro acordes
+# No está demostrado que una música sea óptima para leer. Esta aplica lo
+# que la investigación sobre sonido irrelevante sí sostiene: lo que distrae
+# es el cambio impredecible (habla, letra, saltos, acentos). Por eso tiene
+# pocas notas por segundo, fuerza suave y constante, sin acentos, sin agudos
+# brillantes y una pentatónica justa, sin semitonos ni batidos. No tiene
+# final: suena hasta que la detienes. Úsala a volumen bajo.
+# Un motivo de ocho notas, por grados conjuntos, que no cambia nunca; debajo,
+# el bajo recorre cuatro notas, dos compases cada una, y vuelve a empezar.
+# Todo el ciclo dura 8 compases (unos 42 segundos).
+tempo 46 · semilla 32
+afinación razones 1/1 9/8 5/4 3/2 5/3
+base 65.41
+compás 4/4
+
+voz motivo piano
+  tiempo compás 1/8
+  grados 2 3 4 3 2 1 2 3
+  octava 2
+  vel 0.3
+  brillo 0.35
+  vol 1.3
+voz bajo piano
+  tiempo divide 1
+  grados 0 0 4 4 3 3 1 1
+  octava 1
+  pedal compás
+  vel 0.32
+  brillo 0.35
+  vol 1.3

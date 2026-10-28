@@ -35,7 +35,7 @@ El botón «Todo piano» escribe `instrumento piano` al comienzo de la partitura
 
 ## Ejemplos
 
-Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla.
+Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 3 para leer, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla. Las piezas para leer no están demostradas como óptimas: aplican el principio, con respaldo en la investigación sobre sonido irrelevante, de que lo que distrae al leer es el cambio impredecible.
 
 ## Fuentes y homenajes
 
