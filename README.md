@@ -6,6 +6,8 @@ Las voces pueden leer series como ritmo, como duraciones o como alturas: Fibonac
 
 Para buscar una música a-significante hay herramientas que desactivan, una por una, las pistas con que el oído construye sentido: afinaciones sin octava (`afinación paso 78`, `afinación tritava 13`), tiempo sin pulso (`tiempo libre`, ataques de Poisson), notas esparcidas en varias octavas (`dispersar`), fuerzas al azar (`vel azar`), permutaciones que agotan las alturas antes de repetir, y un generador de `expectativa` que elige según un modelo de oyente, de lo más esperado (un ritornelo) a lo menos esperado. Un medidor calcula para cada voz la entropía de las alturas, la sorpresa por nota, los motivos repetidos y la regularidad del tiempo. Una observación medida: el punto menos predecible no es «siempre lo inesperado» sino el azar; rechazar lo esperado de forma sistemática vuelve a formar patrón.
 
+Hay también ruido continuo de tres colores (`voz ruido` con `color blanco`, `rosa` o `marrón`), que puede sonar solo o debajo de cualquier pieza. Un metaanálisis (Nigg y colegas, 2024) encontró que el ruido blanco o rosa mejora un poco la atención en niños y adolescentes con TDAH y la empeora un poco en quienes no lo tienen; no es un tratamiento.
+
 Los instrumentos son sintéticos: batería analógica, un bajo con ampli en paralelo (grave limpio, medios saturados), pads de filtro lento con vibrato tardío, campanas FM, cuerda pulsada y seno, con una sala oscura por convolución.
 
 El piano es grabado: usa muestras de Salamander Grand Piano en `muestras/piano/`, con la afinación real de cada nota medida, así que los microtonos y las razones justas suenan donde se escriben. Se descargan solo las capas de fuerza que usa la partitura.
@@ -35,7 +37,7 @@ El botón «Todo piano» escribe `instrumento piano` al comienzo de la partitura
 
 ## Ejemplos
 
-Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 3 para leer, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla. Las piezas para leer no están demostradas como óptimas: aplican el principio, con respaldo en la investigación sobre sonido irrelevante, de que lo que distrae al leer es el cambio impredecible.
+Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 3 para leer, 3 de ruido (blanco, rosa y marrón), 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla. Las piezas para leer no están demostradas como óptimas: aplican el principio, con respaldo en la investigación sobre sonido irrelevante, de que lo que distrae al leer es el cambio impredecible.
 
 ## Fuentes y homenajes
 

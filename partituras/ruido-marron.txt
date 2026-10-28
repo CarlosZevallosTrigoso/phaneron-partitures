@@ -1,0 +1,18 @@
+# Ruido marrón
+# También llamado browniano: −6 dB por octava, más grave, como un rumor
+# lejano o el interior de un avión. Es muy usado para concentrarse, aunque
+# los estudios del metaanálisis usaron sobre todo ruido blanco y rosa.
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color marrón
+  tiempo divide 1

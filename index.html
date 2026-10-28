@@ -217,6 +217,7 @@ button:disabled { opacity: 0.4; cursor: default; }
         <dt>pad</dt><dd>Dos sierras desafinadas y un triángulo con filtro resonante que se abre despacio y vibrato tardío. Pensado para notas largas (<code>largo</code> 4 por defecto).</dd>
         <dt>metal</dt><dd>Campana FM: la portadora suena a la altura exacta y la moduladora a √2 le da el timbre metálico. <code>brillo</code> es el índice de modulación.</dd>
         <dt>cuerda · seno</dt><dd>Cuerda pulsada (Karplus-Strong) y seno puro.</dd>
+        <dt>ruido · color rosa</dt><dd>Ruido continuo, sin notas: <code>color</code> blanco (energía pareja en todas las frecuencias), rosa (−3 dB por octava) o marrón (−6 dB por octava, más grave). Cada golpe es un tramo que se funde con el siguiente, así que con <code>tiempo divide 1</code> suena sin cortes. <code>brillo</code> atenúa los agudos. Para ponerlo debajo de cualquier pieza basta agregar <code>voz fondo ruido</code>, <code>color rosa</code> y <code>tiempo divide 1</code>; «Todo piano» no lo convierte.</dd>
         <dt>piano</dt><dd>Piano de cola grabado, con 4 capas de fuerza que elige <code>vel</code>: 0,3, 0,5, 0,75 y 1 (los acentos suben a la siguiente). Cada nota usa la grabación más cercana, llevada a la altura exacta: la afinación real de cada muestra está medida, así que los microtonos y las razones justas suenan donde se escriben. La tecla se suelta tras <code>largo</code> pasos y <code>decae</code> es lo que tarda el apagador; por encima de Fa6 no hay apagadores, como en un piano real. La primera vez se descargan las muestras (unos 2 MB por capa).</dd>
       </dl>
 
@@ -298,12 +299,14 @@ const INSTRUMENTOS = {
   metal:   { vol: 0.4,  decae: 2.2,  brillo: 0.35, distorsion: 0,    largo: 1,   espacio: 0.4,  desafinar: 0, vibrato: 0, melodico: true  },
   // piano grabado: «decae» es lo que tarda el apagador en callar la cuerda; brillo 0,5 es neutro
   piano:   { vol: 0.8,  decae: 0.25, brillo: 0.5,  distorsion: 0,    largo: 1,   espacio: 0.22, desafinar: 0, vibrato: 0, melodico: true  },
+  // ruido continuo: cada golpe es un tramo que se funde con el siguiente; «color» elige blanco, rosa o marrón
+  ruido:   { vol: 0.6,  decae: 0.06, brillo: 0.75, distorsion: 0,    largo: 1,   espacio: 0,    desafinar: 0, vibrato: 0, melodico: false },
 };
 const ALIAS_INSTR = {
   hihat: 'charles', hat: 'charles', platillo: 'charles', kick: 'bombo', snare: 'caja',
   bass: 'bajo', guitarra: 'cuerda', pluck: 'cuerda', sine: 'seno',
   colchon: 'pad', cs80: 'pad', campana: 'metal', campanas: 'metal', fm: 'metal',
-  pianoforte: 'piano', cola: 'piano',
+  pianoforte: 'piano', cola: 'piano', noise: 'ruido',
 };
 
 /** Octava en que suena una voz de percusión cuando toda la partitura pasa a un instrumento con altura. */
@@ -785,7 +788,7 @@ function frecuencia(ratios, base, grado, periodo = 2) {
 }
 
 /* ---------- parser ---------- */
-const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio', 'pedal', 'dispersar',
+const CLAVES_VOZ = new Set(['instrumento', 'tiempo', 'ritmo', 'grados', 'octava', 'entra', 'sale', 'silencio', 'pedal', 'dispersar', 'color',
   ...Object.keys(PARAMS_NUM)]);
 
 /** Lee «mod n» y «suma n» a partir de args[i]; devuelve el índice siguiente o -1 si hubo error. */
@@ -973,7 +976,7 @@ function parsear(texto) {
           nombre, nombreBase: base, linea: ln, instr: null, instrExplicito: false, octavaDada: false, lineaInstr: ln,
           tiempo: { modo: 'compas', u: null }, lineaTiempo: ln,
           ritmo: { gen: 'todos', transf: [] }, grados: null, octava: 0,
-          entra: null, sale: null, silencio: false, pedal: null, lineaPedal: 0, params: {},
+          entra: null, sale: null, silencio: false, pedal: null, lineaPedal: 0, color: 'rosa', lineaColor: 0, params: {},
         };
         p.voces.push(voz);
         if (args[1]) {
@@ -1038,6 +1041,12 @@ function parsear(texto) {
           else if (modo === 'compas') voz.pedal = 'compas';
           else if (modo === 'no') voz.pedal = null;
           else err('«pedal» acepta: pedal (deja resonar), pedal compás (se renueva en cada compás) o pedal no');
+        } else if (clave === 'color') {
+          const c = normalizar(args[0] || '');
+          const r = { blanco: 'blanco', rosa: 'rosa', marron: 'marron', cafe: 'marron', pardo: 'marron', browniano: 'marron' }[c];
+          voz.lineaColor = ln;
+          if (!r) err('«color» del ruido: blanco, rosa o marrón');
+          else voz.color = r;
         } else if (clave === 'dispersar') {
           const v = entero(args[0]);
           if (!(v >= 1 && v <= 6)) err('«dispersar n»: cada nota cae en una de n octavas, sorteada con la semilla (1–6)');
@@ -1066,7 +1075,7 @@ function parsear(texto) {
     // «instrumento X» fuera de una voz los reemplaza a todos mientras esté escrito.
     const delNombre = INSTRUMENTOS[ALIAS_INSTR[v.nombreBase] || v.nombreBase] ? (ALIAS_INSTR[v.nombreBase] || v.nombreBase) : null;
     v.instrPropio = v.instrExplicito ? v.instr : delNombre || 'piano';
-    v.instr = p.instrumentoGlobal || v.instrPropio;
+    v.instr = p.instrumentoGlobal && v.instrPropio !== 'ruido' ? p.instrumentoGlobal : v.instrPropio;   // el ruido no tiene notas: no se convierte
     // una voz de percusión que pasa a un instrumento con altura toca la base en su registro
     if (p.instrumentoGlobal && !INSTRUMENTOS[v.instrPropio].melodico && INSTRUMENTOS[v.instr].melodico
         && !v.grados && !v.octavaDada) {
@@ -1091,6 +1100,7 @@ function parsear(texto) {
     v.desafinar = v.params.desafinar ?? def.desafinar;
     v.vibrato = v.params.vibrato ?? def.vibrato;
     v.melodico = def.melodico;
+    if (v.lineaColor && v.instr !== 'ruido') avisos.push({ linea: v.lineaColor, msg: '«color» solo afecta al ruido' });
     if (v.pedal && v.instr !== 'piano') avisos.push({ linea: v.lineaPedal, msg: '«pedal» solo afecta al piano' });
     if (v.grados && !def.melodico) avisos.push({ linea: v.linea, msg: `«${v.instr}» no tiene altura: se ignoran sus grados` });
     if (v.entra && v.sale && v.sale <= v.entra) errores.push({ linea: v.linea, msg: '«sale» debe ser mayor que «entra»' });
@@ -1347,6 +1357,39 @@ function analizar(p, linea, nComp) {
  * Devuelve muestras de una cuerda pulsada. El retardo fraccionario
  * (interpolación lineal) mantiene la afinación exacta en microtonos.
  */
+/* ---------- ruido de colores ---------- */
+/**
+ * n muestras de ruido blanco (espectro plano), rosa (−3 dB por octava, filtro
+ * de Paul Kellet) o marrón (−6 dB por octava, integrador con fuga). Se cierra
+ * en bucle sin costura fundiendo su final con su comienzo, y se normaliza a
+ * un valor eficaz común para los tres colores.
+ */
+function generarRuido(color, n, semilla, rms = 0.15) {
+  const L = Math.min(Math.floor(n / 4), 22050);
+  const x = new Float64Array(n + L);
+  const rnd = mulberry32(hash32(`ruido|${color}|${semilla}`));
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, ultimo = 0;
+  for (let i = 0; i < n + L; i++) {
+    const w = rnd() * 2 - 1;
+    if (color === 'rosa') {
+      b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.96900 * b2 + w * 0.1538520;
+      b3 = 0.86650 * b3 + w * 0.3104856; b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+      x[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926;
+    } else if (color === 'marron') {
+      ultimo = (ultimo + 0.02 * w) / 1.02; x[i] = ultimo;
+    } else x[i] = w;
+  }
+  // bucle sin costura: el comienzo se funde (igual potencia) con lo que sigue al final
+  const y = new Float32Array(n);
+  for (let i = 0; i < n; i++) y[i] = x[i];
+  for (let i = 0; i < L; i++) { const a = i / L; y[i] = x[i] * Math.sqrt(a) + x[n + i] * Math.sqrt(1 - a); }
+  let media = 0; for (let i = 0; i < n; i++) media += y[i]; media /= n;
+  let e = 0; for (let i = 0; i < n; i++) { y[i] -= media; e += y[i] * y[i]; }
+  const k = rms / Math.sqrt(e / n);
+  for (let i = 0; i < n; i++) y[i] *= k;
+  return y;
+}
+
 function cuerdaKS(sr, freq, t60, brillo, semilla) {
   const D = sr / freq;           // retardo total del lazo, en muestras
   const P = D - 0.5;             // el filtro promediador aporta media muestra
@@ -1393,7 +1436,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     INSTRUMENTOS, CAPAS_PIANO, capaPiano, puedeAcentuar, capasPianoNecesarias, SERIES, parsearSerie, valorSerie, normalizar, mulberry32, hash32, azar, numero, bjorklund, transformar,
     parsearGolpes, valorGrado, ratiosAfinacion, frecuencia, parsear, crearLinea, crearCursor,
-    eventosEntre, cuerdaKS, codificarWAV, periodoAfinacion, crearModelo, predecir, aprender, crearOyente, expectativa, permutacion,
+    eventosEntre, cuerdaKS, codificarWAV, generarRuido, periodoAfinacion, crearModelo, predecir, aprender, crearOyente, expectativa, permutacion,
     analizar, medirVoz, entropia,
   };
 }
@@ -1414,7 +1457,7 @@ function crearRecursos(ctx, semilla) {
   const d = ruido.getChannelData(0);
   const rnd = mulberry32((semilla ^ 0x9e3779b9) >>> 0);
   for (let i = 0; i < d.length; i++) d[i] = rnd() * 2 - 1;
-  return { ruido, ks: new Map(), semilla, fueraDeRango: 0, faltanMuestras: 0, pianoSonando: new Map() };
+  return { ruido, ks: new Map(), colores: new Map(), semilla, fueraDeRango: 0, faltanMuestras: 0, pianoSonando: new Map() };
 }
 
 function curvaDistorsion(k) {
@@ -1545,7 +1588,8 @@ function crearBus(ctx, mezcla, voz) {
     pn.pan.value = voz.pan;
     vol.connect(pn); salida = pn;
   }
-  salida.connect(voz.instr === 'piano' && mezcla.directo ? mezcla.directo : mezcla.entrada);
+  // el piano y el ruido no pasan por el compresor: uno perdería el ataque y el otro lo haría bombear
+  salida.connect((voz.instr === 'piano' || voz.instr === 'ruido') && mezcla.directo ? mezcla.directo : mezcla.entrada);
   if (voz.espacio > 0 && mezcla.sala) {
     const envio = ctx.createGain();
     envio.gain.value = voz.espacio;
@@ -1595,6 +1639,20 @@ function vibrar(ctx, oscs, t, cents, fin) {
   lfo.start(t); lfo.stop(fin + 0.05);
 }
 const ALTURAS_METALICAS = [205.3, 304.4, 369.6, 522.7, 540, 800];
+const RUIDO_SEG = 12;                       // largo del bucle de ruido de cada color
+const FUNDIDO = 0.06;                       // fundido entre tramos de ruido (igual potencia)
+const CURVA_SUBE = Float32Array.from({ length: 64 }, (_, i) => Math.sin((Math.PI / 2) * i / 63));
+const CURVA_BAJA = Float32Array.from({ length: 64 }, (_, i) => Math.cos((Math.PI / 2) * i / 63));
+function bufferRuido(ctx, rec, color) {
+  let b = rec.colores.get(color);
+  if (!b) {
+    const y = generarRuido(color, Math.round(RUIDO_SEG * ctx.sampleRate), rec.semilla);
+    b = ctx.createBuffer(1, y.length, ctx.sampleRate);
+    b.getChannelData(0).set(y);
+    rec.colores.set(color, b);
+  }
+  return b;
+}
 
 const SINTES = {
   bombo(ctx, bus, ev, voz, rec, t) {
@@ -1747,6 +1805,34 @@ const SINTES = {
     vibrar(ctx, [car], t, voz.vibrato, fin);
   },
   /**
+   * Ruido continuo: cada golpe es un tramo del bucle de su color, que entra y
+   * sale con fundidos de igual potencia superpuestos al tramo vecino, así que
+   * golpes seguidos suenan como un ruido sin cortes.
+   */
+  ruido(ctx, bus, ev, voz, rec, t) {
+    const buf = bufferRuido(ctx, rec, voz.color);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    const dur = Math.max(FUNDIDO, ev.dur * voz.largo);
+    const t0 = Math.max(0, t - FUNDIDO / 2), tBaja = t0 + Math.max(FUNDIDO, dur);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueCurveAtTime(CURVA_SUBE, t0, FUNDIDO);
+    g.gain.setValueCurveAtTime(CURVA_BAJA, tBaja, FUNDIDO);
+    let nodo = src;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 25;
+    nodo.connect(hp); nodo = hp;
+    if (voz.brillo < 0.999) {
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 1500 * Math.pow(2, voz.brillo * 4); lp.Q.value = 0.5;
+      nodo.connect(lp); nodo = lp;
+    }
+    nodo.connect(g); g.connect(bus);
+    src.start(t0, azar(rec.semilla, 'tramo', ev.voz, ev.g) * buf.duration);
+    src.stop(tBaja + FUNDIDO + 0.01);
+  },
+  /**
    * Piano grabado. La muestra más cercana se acelera o frena hasta la altura
    * exacta (su afinación real está medida en el manifiesto). La tecla se
    * suelta tras «largo» pasos; con «pedal compás», al final del compás; con
@@ -1895,7 +1981,7 @@ function renderizar(p, ClaseOffline, compasesSinDuracion = 16, sr = 44100) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { crearRecursos, crearMezcla, crearBus, programarEvento, renderizar, SINTES, respuestaSala,
-    PIANO, cargarCapasPiano, elegirMuestraPiano, pianoCapaLista, inicioMuestra };
+    PIANO, cargarCapasPiano, elegirMuestraPiano, pianoCapaLista, inicioMuestra, bufferRuido };
 }
 </script>
 <script>
@@ -2565,6 +2651,63 @@ voz arriba piano
   vel 0.26
   brillo 0.35
   vol 1.3
+` },
+{ nombre: "Ruido rosa", grupo: "Ruido", texto: `# Ruido rosa
+# Reparte la energía por igual en cada octava (−3 dB por octava): suena más
+# suave que el blanco, como lluvia pareja.
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color rosa
+  tiempo divide 1
+` },
+{ nombre: "Ruido marrón", grupo: "Ruido", texto: `# Ruido marrón
+# También llamado browniano: −6 dB por octava, más grave, como un rumor
+# lejano o el interior de un avión. Es muy usado para concentrarse, aunque
+# los estudios del metaanálisis usaron sobre todo ruido blanco y rosa.
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color marrón
+  tiempo divide 1
+` },
+{ nombre: "Ruido blanco", grupo: "Ruido", texto: `# Ruido blanco
+# La misma energía en todas las frecuencias: el más brillante de los tres y
+# el más estudiado (desde los trabajos de Göran Söderlund). Aquí sus agudos
+# están algo atenuados para que canse menos; súbelos con «brillo 1».
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color blanco
+  tiempo divide 1
+  vol 0.5
 ` },
 { nombre: "Tres grados de expectativa", grupo: "A-significantes", texto: `# Tres grados de expectativa
 # Tres voces eligen sus notas con el mismo generador y el mismo ritmo; solo

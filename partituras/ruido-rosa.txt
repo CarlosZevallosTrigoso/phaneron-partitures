@@ -1,0 +1,17 @@
+# Ruido rosa
+# Reparte la energía por igual en cada octava (−3 dB por octava): suena más
+# suave que el blanco, como lluvia pareja.
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color rosa
+  tiempo divide 1

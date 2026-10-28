@@ -1,0 +1,19 @@
+# Ruido blanco
+# La misma energía en todas las frecuencias: el más brillante de los tres y
+# el más estudiado (desde los trabajos de Göran Söderlund). Aquí sus agudos
+# están algo atenuados para que canse menos; súbelos con «brillo 1».
+# Un metaanálisis de 13 estudios (Nigg y colegas, 2024) encontró que el
+# ruido blanco o rosa mejora un poco el rendimiento en tareas de atención de
+# niños y adolescentes con TDAH o con problemas de atención (efecto ≈ 0,25),
+# y lo empeora un poco en quienes no los tienen; en adultos hay menos
+# estudios. No es un tratamiento ni calma por sí mismo: es una ayuda pequeña
+# que conviene probar. Úsalo a volumen moderado, más bajo que una
+# conversación. Es continuo y no tiene final: un tramo por compás que se
+# funde con el siguiente.
+tempo 60
+compás 4/4
+
+voz ruido
+  color blanco
+  tiempo divide 1
+  vol 0.5
