@@ -1,0 +1,26 @@
+# Hoquetus de Thue-Morse
+# En el hoquetus medieval dos voces se reparten los golpes de una línea.
+# Aquí cada semicorchea la toca la mano que indica la secuencia de
+# Thue-Morse: nunca hay un hueco ni dos manos a la vez. Es el reparto
+# justo de Prouhet (1851): en cada bloque de 2^k semicorcheas, las
+# posiciones de una mano y las de la otra tienen la misma suma, la misma
+# suma de cuadrados… hasta la potencia k−1. Y ningún bloque se repite tres
+# veces seguidas. Cada mano canta la serie de Nørgård.
+tempo 84 · semilla 13
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/16
+  ritmo thue invertir
+  grados norgard suma 7
+  octava 1
+  vel 0.55
+voz derecha piano
+  tiempo compás 1/16
+  ritmo thue
+  grados norgard suma 4
+  octava 2
+  vel 0.6

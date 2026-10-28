@@ -1,0 +1,28 @@
+# Canon 3:4:5
+# Homenaje a Conlon Nancarrow y sus estudios para pianola, donde una misma
+# melodía suena a la vez a velocidades distintas. Aquí tres voces tocan
+# Fibonacci módulo 9, un ciclo de 24 notas, con pasos de 1/12, 1/16 y
+# 1/20 de redonda: velocidades en proporción 3:4:5. Cada 6 compases la
+# lenta completa 3 vueltas, la media 4 y la rápida 5, y vuelven a empezar
+# juntas.
+tempo 60 · semilla 4
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 15/8    # mayor justo
+base 65.41
+compás 4/4
+duración 24
+
+voz lenta piano
+  tiempo bucle 1/12
+  grados fib mod 9
+  octava 1
+  vel 0.6
+voz media piano
+  tiempo bucle 1/16
+  grados fib mod 9
+  octava 2
+  vel 0.55
+voz rapida piano
+  tiempo bucle 1/20
+  grados fib mod 9
+  octava 3
+  vel 0.5

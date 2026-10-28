@@ -1,0 +1,26 @@
+# Dirichlet
+# Salvo el 2 y el 3, todo número primo deja resto 1, 5, 7 u 11 al dividirlo
+# por 12, y por el teorema de Dirichlet (1837) se reparte por igual entre
+# esos cuatro restos. En 12 notas por octava sobre do, la mano derecha lee
+# los primos módulo 12: tras las dos primeras notas solo puede tocar do♯,
+# fa, sol y si, en un orden que nadie sabe predecir. Sus duraciones son
+# los primos módulo 3 más uno: pasado el 3, siempre 2 o 3 corcheas.
+# La izquierda toca la misma serie una nota por compás: canon por aumentación.
+tempo 84 · semilla 1
+afinación edo 12
+base 65.41                     # do2
+compás 4/4
+duración 32
+
+voz derecha piano
+  tiempo compás 1/8
+  ritmo duraciones primos mod 3 suma 1
+  grados primos mod 12
+  octava 2
+  pedal compás
+  vel 0.65
+voz izquierda piano
+  tiempo divide 1
+  grados primos mod 12
+  octava 0
+  vel 0.5

@@ -1,0 +1,28 @@
+# Crecimiento áureo
+# Los compases crecen como Fibonacci: 2, 3, 5, 8 y 13 corcheas, y vuelven a
+# empezar. La escala apila 13 veces la razón áurea φ y la baja a una
+# octava. El teorema de las tres distancias dice que una escala así tiene
+# como mucho tres tamaños de paso; con 13 notas tiene solo dos, de 99 y
+# 69 cents. Las manos reparten 2 y 3 golpes por compás con ritmos
+# euclidianos, y las alturas leen Fibonacci módulo 13.
+tempo 112 · semilla 16
+afinación generador phi 13
+base 55
+compás 2/8 3/8 5/8 8/8 13/8
+duración 25
+
+voz izquierda piano
+  ritmo euclides(2)
+  grados fib mod 13
+  octava 1
+  vel 0.55
+voz derecha piano
+  ritmo euclides(3)
+  grados fib mod 13 suma 3
+  octava 2
+  vel 0.6
+voz grave piano
+  tiempo divide 1
+  grados 0 0 8 5 0
+  pedal compás
+  vel 0.45

@@ -1,0 +1,24 @@
+# Rollo de Sierpinski
+# Como en la cinta de una pianola, cada columna de un autómata celular es
+# una tecla. La regla 90 (cada celda es el XOR de sus dos vecinas) parte
+# de una sola celda y dibuja el triángulo de Sierpinski. En un anillo de
+# 11 celdas el dibujo choca consigo mismo y se repite cada 31
+# generaciones. La regla es simétrica: cada acorde es un espejo alrededor
+# de la tecla central.
+tempo 88 · semilla 12
+afinación razones 1/1 9/8 5/4 3/2 5/3    # pentatónica justa: 11 teclas, dos octavas
+base 110
+compás 4/4
+duración 32
+
+voz t1 piano · tiempo compás 1/8 · ritmo automata(90,11,1) · grados 0 · vel 0.42
+voz t2 piano · tiempo compás 1/8 · ritmo automata(90,11,2) · grados 1 · vel 0.42
+voz t3 piano · tiempo compás 1/8 · ritmo automata(90,11,3) · grados 2 · vel 0.42
+voz t4 piano · tiempo compás 1/8 · ritmo automata(90,11,4) · grados 3 · vel 0.42
+voz t5 piano · tiempo compás 1/8 · ritmo automata(90,11,5) · grados 4 · vel 0.42
+voz t6 piano · tiempo compás 1/8 · ritmo automata(90,11,6) · grados 5 · vel 0.42
+voz t7 piano · tiempo compás 1/8 · ritmo automata(90,11,7) · grados 6 · vel 0.42
+voz t8 piano · tiempo compás 1/8 · ritmo automata(90,11,8) · grados 7 · vel 0.42
+voz t9 piano · tiempo compás 1/8 · ritmo automata(90,11,9) · grados 8 · vel 0.42
+voz t10 piano · tiempo compás 1/8 · ritmo automata(90,11,10) · grados 9 · vel 0.42
+voz t11 piano · tiempo compás 1/8 · ritmo automata(90,11,11) · grados 10 · vel 0.42

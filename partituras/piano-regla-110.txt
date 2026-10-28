@@ -1,0 +1,25 @@
+# Regla 110
+# Un autómata celular de una sola regla local que Matthew Cook demostró
+# Turing-completo (2004): con la condición inicial adecuada puede hacer
+# cualquier cálculo. A diferencia de la regla 90 no es simétrica: crece
+# solo hacia la izquierda, que aquí son las teclas graves. En un anillo de
+# 11 celdas, tras 13 generaciones de transición entra en un ciclo de 110.
+# Cada columna es una tecla, como en un rollo de pianola, sobre la escala
+# de tonos enteros.
+tempo 66 · semilla 19
+afinación edo 6
+base 130.81                    # do3
+compás 4/4
+duración 24
+
+voz t1 piano · tiempo compás 1/8 · ritmo automata(110,11,1) · grados 0 · vel 0.45
+voz t2 piano · tiempo compás 1/8 · ritmo automata(110,11,2) · grados 1 · vel 0.45
+voz t3 piano · tiempo compás 1/8 · ritmo automata(110,11,3) · grados 2 · vel 0.45
+voz t4 piano · tiempo compás 1/8 · ritmo automata(110,11,4) · grados 3 · vel 0.45
+voz t5 piano · tiempo compás 1/8 · ritmo automata(110,11,5) · grados 4 · vel 0.45
+voz t6 piano · tiempo compás 1/8 · ritmo automata(110,11,6) · grados 5 · vel 0.45
+voz t7 piano · tiempo compás 1/8 · ritmo automata(110,11,7) · grados 6 · vel 0.45
+voz t8 piano · tiempo compás 1/8 · ritmo automata(110,11,8) · grados 7 · vel 0.45
+voz t9 piano · tiempo compás 1/8 · ritmo automata(110,11,9) · grados 8 · vel 0.45
+voz t10 piano · tiempo compás 1/8 · ritmo automata(110,11,10) · grados 9 · vel 0.45
+voz t11 piano · tiempo compás 1/8 · ritmo automata(110,11,11) · grados 10 · vel 0.45

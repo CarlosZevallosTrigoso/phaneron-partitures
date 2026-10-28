@@ -1,0 +1,23 @@
+# Mariposa
+# Dos voces leen el mapa logístico x → r·x·(1−x) en régimen caótico. La
+# única diferencia es r: 3,9 en una y 3,900000000000001 en la otra, una
+# milbillonésima. Durante 72 notas tocan exactamente lo mismo, en octavas;
+# después el error crece a cada paso y se separan para siempre. Es la
+# sensibilidad a las condiciones iniciales que Edward Lorenz llamó
+# efecto mariposa.
+tempo 80 · semilla 5
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5    # eólico justo
+base 55
+compás 4/4
+duración 24
+
+voz una piano
+  tiempo compás 1/8
+  grados logistico(3.9) mod 8
+  octava 1
+  vel 0.6
+voz otra piano
+  tiempo compás 1/8
+  grados logistico(3.900000000000001) mod 8
+  octava 2
+  vel 0.55

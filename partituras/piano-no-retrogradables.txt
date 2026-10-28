@@ -1,0 +1,38 @@
+# No retrogradables
+# Olivier Messiaen llamó «ritmos no retrogradables» a los palíndromos
+# rítmicos: leídos al revés son idénticos (escribir «retrógrado» después
+# no los cambia). Tres voces repiten palíndromos de 9, 11 y 13
+# semicorcheas, con alturas también palindrómicas, sobre un pulso de
+# negras. Las cuatro capas recién vuelven a coincidir tras
+# 9 × 11 × 13 × 16 = 20 592 semicorcheas, casi una hora. La escala es su
+# tercer modo de transposición limitada.
+tempo 90 · semilla 20
+afinación cents 0 200 300 400 600 700 800 1000 1100
+base 65.41
+compás 4/4
+duración 32
+
+voz nueve piano
+  tiempo bucle 9/16
+  ritmo x..x.x..x
+  grados 0 4 4 0
+  octava 2
+  vel 0.55
+voz once piano
+  tiempo bucle 11/16
+  ritmo x.x..x..x.x
+  grados 7 5 2 5 7
+  octava 2
+  vel 0.5
+voz trece piano
+  tiempo bucle 13/16
+  ritmo x...x.x.x...x
+  grados 0 8 3 8 0
+  octava 1
+  vel 0.55
+voz pulso piano
+  ritmo x
+  tiempo compás 1/4
+  grados 0
+  pedal compás
+  vel 0.4

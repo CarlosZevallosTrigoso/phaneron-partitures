@@ -1,0 +1,26 @@
+# Treinta y uno
+# Christiaan Huygens propuso en el siglo XVII dividir la octava en 31
+# partes iguales, y Adriaan Fokker construyó a mediados del siglo XX un
+# órgano afinado así. En 31 divisiones, la tercera mayor (10 pasos, 387
+# cents) y la séptima armónica (25 pasos, 968 cents) quedan a 0,8 y 1,1
+# cents de las razones puras 5/4 y 7/4, que el piano temperado no tiene.
+# La izquierda arpegia el acorde 4:5:6:7 (pasos 0, 10, 18 y 25); la
+# derecha recorre la serie de Recamán sobre los 31 pasos.
+tempo 80 · semilla 8
+afinación edo 31
+base 65.41
+compás 4/4
+duración 24
+
+voz acorde piano
+  tiempo compás 1/8
+  grados 0 10 18 25 18 10
+  octava 1
+  pedal compás
+  vel 0.5
+voz recaman piano
+  tiempo compás 1/8
+  ritmo euclides(5,8)
+  grados recaman mod 31
+  octava 2
+  vel 0.6

@@ -1,0 +1,26 @@
+# Coma pitagórica
+# Doce quintas puras (3/2) no cierran el círculo: la nota número trece
+# queda 23,46 cents por encima de la primera. Es la coma pitagórica,
+# 531441/524288. Con 13 quintas apiladas, la escala tiene esas dos notas
+# como grados 0 y 1. La derecha recorre el círculo de quintas en orden
+# (grados 0 8 3 10 5 12 7 2 9 4 11 6 1), un compás de 13/8 por vuelta, y
+# termina en el grado 1 sobre el grado 0 que sostiene la izquierda: cada
+# vez que el ciclo debería cerrar, se oye el batido de la coma.
+tempo 72 · semilla 7
+afinación pitagórica 13
+base 65.41
+compás 13/8
+duración 16
+
+voz quintas piano
+  tiempo compás 1/8
+  grados 0 8 3 10 5 12 7 2 9 4 11 6 1
+  octava 2
+  largo 1.2
+  vel 0.6
+voz bordon piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.45

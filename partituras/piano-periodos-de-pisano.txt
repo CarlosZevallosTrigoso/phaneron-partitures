@@ -1,0 +1,27 @@
+# Períodos de Pisano
+# Fibonacci reducida módulo n siempre se vuelve periódica, algo que
+# Lagrange ya había notado en el siglo XVIII: módulo 5 se repite cada 20
+# notas, módulo 7 cada 16 y módulo 8 cada 12. Tres voces leen esas tres
+# versiones al mismo ritmo y solo vuelven a coincidir cada
+# mcm(20, 16, 12) = 240 notas: los 30 compases de la pieza.
+tempo 120 · semilla 17
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 15/8
+base 65.41
+compás 4/4
+duración 30
+
+voz cinco piano
+  tiempo compás 1/8
+  grados fib mod 5
+  octava 1
+  vel 0.5
+voz siete piano
+  tiempo compás 1/8
+  grados fib mod 7
+  octava 2
+  vel 0.55
+voz ocho piano
+  tiempo compás 1/8
+  grados fib mod 8
+  octava 3
+  vel 0.45

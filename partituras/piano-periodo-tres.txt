@@ -1,0 +1,23 @@
+# Período tres
+# En medio del caos del mapa logístico se abre una ventana donde todo se
+# ordena en un ciclo de tres valores: empieza en r = 1 + √8 ≈ 3,8284.
+# Li y Yorke demostraron en 1975 que un ciclo de período tres obliga a que
+# existan ciclos de todos los períodos: «período tres implica caos». La
+# melodía recorre r de 3,82 a 3,87 en 400 notas: primero ráfagas
+# intermitentes, luego el ciclo de tres, que en este 3/8 dura exactamente
+# un compás, después su duplicación en seis y doce, y el regreso al caos.
+tempo 144 · semilla 6
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 3/8
+duración 134
+
+voz mapa piano
+  grados logistico(3.82,3.87,400) mod 8
+  octava 2
+  vel 0.6
+voz pulso piano
+  ritmo x..
+  grados 0
+  pedal compás
+  vel 0.45

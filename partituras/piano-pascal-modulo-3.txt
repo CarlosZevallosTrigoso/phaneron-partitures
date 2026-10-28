@@ -1,0 +1,23 @@
+# Pascal módulo 3
+# El triángulo de Pascal reducido módulo 3 forma un fractal de triángulos
+# que se repite a escalas 3, 9, 27… (teorema de Lucas). Leído fila por
+# fila, decide el ritmo: 0 es silencio, 1 un golpe y 2 un acento. Las
+# alturas leen el mismo triángulo módulo 5 sobre una pentatónica justa,
+# y el bajo lo toca una nota por tiempo.
+tempo 96 · semilla 11
+afinación razones 1/1 9/8 5/4 3/2 5/3
+base 55
+compás 4/4
+duración 24
+
+voz triangulo piano
+  tiempo compás 1/16
+  ritmo serie pascal mod 3
+  grados pascal mod 5
+  octava 2
+  vel 0.55
+voz bajo piano
+  tiempo compás 1/4
+  grados pascal mod 5
+  octava 1
+  vel 0.45

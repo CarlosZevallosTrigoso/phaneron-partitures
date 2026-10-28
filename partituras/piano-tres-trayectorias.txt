@@ -1,0 +1,29 @@
+# Tres trayectorias
+# Conjetura de Collatz (1937, sin demostrar): si el número es par se divide
+# entre 2; si es impar, se multiplica por 3 y se suma 1. Desde cualquier
+# número se llegaría siempre a 4, 2, 1. Tres voces parten de 7, 27 y 97:
+# frases de 17, 112 y 119 notas que suben hasta 52, 9232 y 9232 antes de
+# caer en la misma cadencia 4, 2, 1, que aquí son los grados 4, 2 y 1.
+# Cada voz repite su frase entera.
+tempo 120 · semilla 14
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 32
+
+voz siete piano
+  tiempo compás 1/8
+  grados collatz(7) mod 7
+  octava 3
+  vel 0.5
+voz veintisiete piano
+  tiempo compás 1/8
+  grados collatz(27) mod 7
+  octava 2
+  vel 0.6
+voz noventaysiete piano
+  tiempo compás 1/4
+  grados collatz(97) mod 7
+  octava 1
+  pedal compás
+  vel 0.5

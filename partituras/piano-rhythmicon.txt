@@ -1,0 +1,22 @@
+# Rhythmicon
+# Homenaje a Henry Cowell y Léon Theremin, que a comienzos de los años
+# treinta construyeron una máquina para esta idea: el armónico n de una
+# nota vibra n veces más rápido que ella, así que también puede sonar n
+# veces por compás. Cada voz toca un armónico de La1 tantas veces por
+# compás como su número de orden: los ritmos 1:2:3:4:5:6:7:8 son los mismos
+# cocientes que las alturas. Los armónicos altos suenan más suaves, como
+# en un sonido natural.
+tempo 50 · semilla 3
+afinación razones 1/1 5/4 3/2 7/4     # armónicos 4, 5, 6 y 7 bajados a una octava
+base 55
+compás 4/4
+duración 32
+
+voz uno piano · tiempo divide 1 · grados 0 · vel 0.75
+voz dos piano · tiempo divide 2 · grados 0 · octava 1 · vel 0.7 · entra 3
+voz tres piano · tiempo divide 3 · grados 2 · octava 1 · vel 0.65 · entra 5
+voz cuatro piano · tiempo divide 4 · grados 0 · octava 2 · vel 0.6 · entra 7
+voz cinco piano · tiempo divide 5 · grados 1 · octava 2 · vel 0.55 · entra 9
+voz seis piano · tiempo divide 6 · grados 2 · octava 2 · vel 0.5 · entra 11
+voz siete piano · tiempo divide 7 · grados 3 · octava 2 · vel 0.45 · entra 13
+voz ocho piano · tiempo divide 8 · grados 0 · octava 3 · vel 0.4 · entra 15 · sale 29

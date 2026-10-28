@@ -1,0 +1,24 @@
+# Árbol de Stern
+# La serie diatómica de Moritz Stern (1858), 0 1 1 2 1 3 2 3 1 4 3 5…,
+# tiene una propiedad única: los cocientes entre términos vecinos recorren
+# todas las fracciones positivas, cada una una sola vez y ya simplificada
+# (Calkin y Wilf, 2000). La afinación son las 12 razones más simples que
+# aparecen así; la melodía lee la serie módulo 12 y sus duraciones, la
+# misma serie módulo 3. El bajo la toca una nota por compás.
+tempo 76 · semilla 15
+afinación stern 12
+base 65.41
+compás 4/4
+duración 24
+
+voz melodia piano
+  tiempo compás 1/16
+  ritmo duraciones stern mod 3 suma 1
+  grados stern mod 12
+  octava 2
+  pedal compás
+  vel 0.6
+voz bajo piano
+  tiempo divide 1
+  grados stern mod 12
+  vel 0.5

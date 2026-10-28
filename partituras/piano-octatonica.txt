@@ -1,0 +1,24 @@
+# Octatónica
+# El segundo modo de transposición limitada de Olivier Messiaen alterna
+# semitono y tono: ocho notas por octava. Transportado tres semitonos se
+# convierte en sí mismo, así que solo existen tres versiones distintas.
+# La derecha lee Fibonacci módulo 8 (ciclo de 12 notas, una octava del
+# modo) y la izquierda Fibonacci módulo 16 (ciclo de 24, dos octavas).
+tempo 100 · semilla 10
+afinación cents 0 100 300 400 600 700 900 1000
+base 65.41
+compás 4/4
+duración 24
+
+voz derecha piano
+  tiempo compás 1/8
+  ritmo x.xx.x.x
+  grados fib mod 8
+  octava 2
+  vel 0.6
+voz izquierda piano
+  tiempo compás 1/4
+  grados fib mod 16
+  octava 0
+  pedal compás
+  vel 0.5

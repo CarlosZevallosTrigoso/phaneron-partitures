@@ -1,0 +1,25 @@
+# Mira y di
+# Cada término de la secuencia de Conway describe en voz alta el anterior:
+# 1, «un uno» 11, «dos unos» 21, 1211, 111221… y solo usa los dígitos
+# 1, 2 y 3. Aquí cada dígito da a la vez la nota y la duración: la escala
+# tiene tres notas (la tríada mayor justa 4:5:6) y cada dígito dura 1, 2
+# o 3 pasos. La izquierda la toca en corcheas; la derecha, la misma en
+# semicorcheas y dos octavas arriba: un canon por disminución.
+tempo 88 · semilla 18
+afinación razones 1/1 5/4 3/2
+base 110
+compás 4/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/8
+  ritmo duraciones conway
+  grados conway suma -1
+  octava 1
+  vel 0.55
+voz derecha piano
+  tiempo compás 1/16
+  ritmo duraciones conway
+  grados conway suma -1
+  octava 3
+  vel 0.5

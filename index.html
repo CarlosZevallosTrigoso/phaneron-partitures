@@ -1645,9 +1645,573 @@ if (typeof module !== 'undefined' && module.exports) {
 </script>
 <script>
 'use strict';
-/* ciclos · partituras de ejemplo */
+/* ciclos · partituras de ejemplo, agrupadas para el menú */
 const EJEMPLOS = [
-{ nombre: '987 · Fibonacci', texto: `# 987 · Fibonacci en la métrica
+{ nombre: "Nocturno", grupo: "Piano", texto: `# Nocturno
+# Piano de cola en afinación justa (modo eólico).
+# Mano izquierda: duraciones de Kolakoski sobre un arpegio fijo, con el
+# pedal renovado en cada compás. Mano derecha: la serie de Nørgård sobre la
+# palabra de Fibonacci, que reparte los golpes sin repetirse nunca.
+tempo 66 · semilla 8
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 3/4 3/4 2/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 4 7 9 7 4
+  pedal compás
+  vel 0.5
+voz derecha piano
+  tiempo compás 1/16
+  ritmo palabrafib
+  grados norgard suma 14
+  pedal compás
+  vel 0.7
+  entra 3
+voz grave piano
+  tiempo divide 1
+  grados 0 0 -2 -3
+  largo 0.9
+  vel 0.5
+  entra 9 · sale 21
+` },
+{ nombre: "Dirichlet", grupo: "Piano", texto: `# Dirichlet
+# Salvo el 2 y el 3, todo número primo deja resto 1, 5, 7 u 11 al dividirlo
+# por 12, y por el teorema de Dirichlet (1837) se reparte por igual entre
+# esos cuatro restos. En 12 notas por octava sobre do, la mano derecha lee
+# los primos módulo 12: tras las dos primeras notas solo puede tocar do♯,
+# fa, sol y si, en un orden que nadie sabe predecir. Sus duraciones son
+# los primos módulo 3 más uno: pasado el 3, siempre 2 o 3 corcheas.
+# La izquierda toca la misma serie una nota por compás: canon por aumentación.
+tempo 84 · semilla 1
+afinación edo 12
+base 65.41                     # do2
+compás 4/4
+duración 32
+
+voz derecha piano
+  tiempo compás 1/8
+  ritmo duraciones primos mod 3 suma 1
+  grados primos mod 12
+  octava 2
+  pedal compás
+  vel 0.65
+voz izquierda piano
+  tiempo divide 1
+  grados primos mod 12
+  octava 0
+  vel 0.5
+` },
+{ nombre: "Espejo de Nørgård", grupo: "Piano", texto: `# Espejo de Nørgård
+# La serie infinita de Per Nørgård cumple a(2n) = −a(n). Si una voz la toca
+# en corcheas y otra en semicorcheas, cada vez que coinciden, la rápida
+# toca la inversión exacta de la lenta. En modo dórico, que es simétrico
+# (tono, semitono, tono, tono, tono, semitono, tono), el espejo es exacto
+# también en los intervalos.
+# Homenaje: la serie es de Per Nørgård, que la desarrolló a fines de los
+# años sesenta como base de su música.
+tempo 76 · semilla 2
+afinación cents 0 200 300 500 700 900 1000    # dórico temperado
+base 73.42                                    # re2
+compás 4/4
+duración 24
+
+voz lenta piano
+  tiempo compás 1/8
+  grados norgard suma 14
+  octava -1
+  vel 0.6
+voz rapida piano
+  tiempo compás 1/16
+  grados norgard suma 14
+  vel 0.45
+` },
+{ nombre: "Rhythmicon", grupo: "Piano", texto: `# Rhythmicon
+# Homenaje a Henry Cowell y Léon Theremin, que a comienzos de los años
+# treinta construyeron una máquina para esta idea: el armónico n de una
+# nota vibra n veces más rápido que ella, así que también puede sonar n
+# veces por compás. Cada voz toca un armónico de La1 tantas veces por
+# compás como su número de orden: los ritmos 1:2:3:4:5:6:7:8 son los mismos
+# cocientes que las alturas. Los armónicos altos suenan más suaves, como
+# en un sonido natural.
+tempo 50 · semilla 3
+afinación razones 1/1 5/4 3/2 7/4     # armónicos 4, 5, 6 y 7 bajados a una octava
+base 55
+compás 4/4
+duración 32
+
+voz uno piano · tiempo divide 1 · grados 0 · vel 0.75
+voz dos piano · tiempo divide 2 · grados 0 · octava 1 · vel 0.7 · entra 3
+voz tres piano · tiempo divide 3 · grados 2 · octava 1 · vel 0.65 · entra 5
+voz cuatro piano · tiempo divide 4 · grados 0 · octava 2 · vel 0.6 · entra 7
+voz cinco piano · tiempo divide 5 · grados 1 · octava 2 · vel 0.55 · entra 9
+voz seis piano · tiempo divide 6 · grados 2 · octava 2 · vel 0.5 · entra 11
+voz siete piano · tiempo divide 7 · grados 3 · octava 2 · vel 0.45 · entra 13
+voz ocho piano · tiempo divide 8 · grados 0 · octava 3 · vel 0.4 · entra 15 · sale 29
+` },
+{ nombre: "Canon 3:4:5", grupo: "Piano", texto: `# Canon 3:4:5
+# Homenaje a Conlon Nancarrow y sus estudios para pianola, donde una misma
+# melodía suena a la vez a velocidades distintas. Aquí tres voces tocan
+# Fibonacci módulo 9, un ciclo de 24 notas, con pasos de 1/12, 1/16 y
+# 1/20 de redonda: velocidades en proporción 3:4:5. Cada 6 compases la
+# lenta completa 3 vueltas, la media 4 y la rápida 5, y vuelven a empezar
+# juntas.
+tempo 60 · semilla 4
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 15/8    # mayor justo
+base 65.41
+compás 4/4
+duración 24
+
+voz lenta piano
+  tiempo bucle 1/12
+  grados fib mod 9
+  octava 1
+  vel 0.6
+voz media piano
+  tiempo bucle 1/16
+  grados fib mod 9
+  octava 2
+  vel 0.55
+voz rapida piano
+  tiempo bucle 1/20
+  grados fib mod 9
+  octava 3
+  vel 0.5
+` },
+{ nombre: "Mariposa", grupo: "Piano", texto: `# Mariposa
+# Dos voces leen el mapa logístico x → r·x·(1−x) en régimen caótico. La
+# única diferencia es r: 3,9 en una y 3,900000000000001 en la otra, una
+# milbillonésima. Durante 72 notas tocan exactamente lo mismo, en octavas;
+# después el error crece a cada paso y se separan para siempre. Es la
+# sensibilidad a las condiciones iniciales que Edward Lorenz llamó
+# efecto mariposa.
+tempo 80 · semilla 5
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5    # eólico justo
+base 55
+compás 4/4
+duración 24
+
+voz una piano
+  tiempo compás 1/8
+  grados logistico(3.9) mod 8
+  octava 1
+  vel 0.6
+voz otra piano
+  tiempo compás 1/8
+  grados logistico(3.900000000000001) mod 8
+  octava 2
+  vel 0.55
+` },
+{ nombre: "Período tres", grupo: "Piano", texto: `# Período tres
+# En medio del caos del mapa logístico se abre una ventana donde todo se
+# ordena en un ciclo de tres valores: empieza en r = 1 + √8 ≈ 3,8284.
+# Li y Yorke demostraron en 1975 que un ciclo de período tres obliga a que
+# existan ciclos de todos los períodos: «período tres implica caos». La
+# melodía recorre r de 3,82 a 3,87 en 400 notas: primero ráfagas
+# intermitentes, luego el ciclo de tres, que en este 3/8 dura exactamente
+# un compás, después su duplicación en seis y doce, y el regreso al caos.
+tempo 144 · semilla 6
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 3/8
+duración 134
+
+voz mapa piano
+  grados logistico(3.82,3.87,400) mod 8
+  octava 2
+  vel 0.6
+voz pulso piano
+  ritmo x..
+  grados 0
+  pedal compás
+  vel 0.45
+` },
+{ nombre: "Coma pitagórica", grupo: "Piano", texto: `# Coma pitagórica
+# Doce quintas puras (3/2) no cierran el círculo: la nota número trece
+# queda 23,46 cents por encima de la primera. Es la coma pitagórica,
+# 531441/524288. Con 13 quintas apiladas, la escala tiene esas dos notas
+# como grados 0 y 1. La derecha recorre el círculo de quintas en orden
+# (grados 0 8 3 10 5 12 7 2 9 4 11 6 1), un compás de 13/8 por vuelta, y
+# termina en el grado 1 sobre el grado 0 que sostiene la izquierda: cada
+# vez que el ciclo debería cerrar, se oye el batido de la coma.
+tempo 72 · semilla 7
+afinación pitagórica 13
+base 65.41
+compás 13/8
+duración 16
+
+voz quintas piano
+  tiempo compás 1/8
+  grados 0 8 3 10 5 12 7 2 9 4 11 6 1
+  octava 2
+  largo 1.2
+  vel 0.6
+voz bordon piano
+  tiempo divide 1
+  grados 0
+  octava 1
+  pedal compás
+  vel 0.45
+` },
+{ nombre: "Treinta y uno", grupo: "Piano", texto: `# Treinta y uno
+# Christiaan Huygens propuso en el siglo XVII dividir la octava en 31
+# partes iguales, y Adriaan Fokker construyó a mediados del siglo XX un
+# órgano afinado así. En 31 divisiones, la tercera mayor (10 pasos, 387
+# cents) y la séptima armónica (25 pasos, 968 cents) quedan a 0,8 y 1,1
+# cents de las razones puras 5/4 y 7/4, que el piano temperado no tiene.
+# La izquierda arpegia el acorde 4:5:6:7 (pasos 0, 10, 18 y 25); la
+# derecha recorre la serie de Recamán sobre los 31 pasos.
+tempo 80 · semilla 8
+afinación edo 31
+base 65.41
+compás 4/4
+duración 24
+
+voz acorde piano
+  tiempo compás 1/8
+  grados 0 10 18 25 18 10
+  octava 1
+  pedal compás
+  vel 0.5
+voz recaman piano
+  tiempo compás 1/8
+  ritmo euclides(5,8)
+  grados recaman mod 31
+  octava 2
+  vel 0.6
+` },
+{ nombre: "Otonalidad", grupo: "Piano", texto: `# Otonalidad
+# Harry Partch llamó «otonalidad» a la armonía de la serie armónica. Los
+# armónicos 8 a 15 de una nota, bajados a una octava, forman una escala de
+# ocho notas, 8:9:10:11:12:13:14:15, con el undécimo y el decimotercer
+# armónico, que no existen en el piano temperado. La melodía lee la serie
+# de Stern; el bajo toca los armónicos 1, 2 y 3 de la fundamental.
+tempo 92 · semilla 9
+afinación razones 1/1 9/8 5/4 11/8 3/2 13/8 7/4 15/8
+base 55
+compás 4/4
+duración 24
+
+voz melodia piano
+  tiempo compás 1/16
+  ritmo euclides(5,12)
+  grados stern mod 8
+  octava 2
+  vel 0.6
+voz armonicos piano
+  tiempo divide 3
+  grados 0 8 12
+  pedal compás
+  vel 0.5
+` },
+{ nombre: "Octatónica", grupo: "Piano", texto: `# Octatónica
+# El segundo modo de transposición limitada de Olivier Messiaen alterna
+# semitono y tono: ocho notas por octava. Transportado tres semitonos se
+# convierte en sí mismo, así que solo existen tres versiones distintas.
+# La derecha lee Fibonacci módulo 8 (ciclo de 12 notas, una octava del
+# modo) y la izquierda Fibonacci módulo 16 (ciclo de 24, dos octavas).
+tempo 100 · semilla 10
+afinación cents 0 100 300 400 600 700 900 1000
+base 65.41
+compás 4/4
+duración 24
+
+voz derecha piano
+  tiempo compás 1/8
+  ritmo x.xx.x.x
+  grados fib mod 8
+  octava 2
+  vel 0.6
+voz izquierda piano
+  tiempo compás 1/4
+  grados fib mod 16
+  octava 0
+  pedal compás
+  vel 0.5
+` },
+{ nombre: "Pascal módulo 3", grupo: "Piano", texto: `# Pascal módulo 3
+# El triángulo de Pascal reducido módulo 3 forma un fractal de triángulos
+# que se repite a escalas 3, 9, 27… (teorema de Lucas). Leído fila por
+# fila, decide el ritmo: 0 es silencio, 1 un golpe y 2 un acento. Las
+# alturas leen el mismo triángulo módulo 5 sobre una pentatónica justa,
+# y el bajo lo toca una nota por tiempo.
+tempo 96 · semilla 11
+afinación razones 1/1 9/8 5/4 3/2 5/3
+base 55
+compás 4/4
+duración 24
+
+voz triangulo piano
+  tiempo compás 1/16
+  ritmo serie pascal mod 3
+  grados pascal mod 5
+  octava 2
+  vel 0.55
+voz bajo piano
+  tiempo compás 1/4
+  grados pascal mod 5
+  octava 1
+  vel 0.45
+` },
+{ nombre: "Rollo de Sierpinski", grupo: "Piano", texto: `# Rollo de Sierpinski
+# Como en la cinta de una pianola, cada columna de un autómata celular es
+# una tecla. La regla 90 (cada celda es el XOR de sus dos vecinas) parte
+# de una sola celda y dibuja el triángulo de Sierpinski. En un anillo de
+# 11 celdas el dibujo choca consigo mismo y se repite cada 31
+# generaciones. La regla es simétrica: cada acorde es un espejo alrededor
+# de la tecla central.
+tempo 88 · semilla 12
+afinación razones 1/1 9/8 5/4 3/2 5/3    # pentatónica justa: 11 teclas, dos octavas
+base 110
+compás 4/4
+duración 32
+
+voz t1 piano · tiempo compás 1/8 · ritmo automata(90,11,1) · grados 0 · vel 0.42
+voz t2 piano · tiempo compás 1/8 · ritmo automata(90,11,2) · grados 1 · vel 0.42
+voz t3 piano · tiempo compás 1/8 · ritmo automata(90,11,3) · grados 2 · vel 0.42
+voz t4 piano · tiempo compás 1/8 · ritmo automata(90,11,4) · grados 3 · vel 0.42
+voz t5 piano · tiempo compás 1/8 · ritmo automata(90,11,5) · grados 4 · vel 0.42
+voz t6 piano · tiempo compás 1/8 · ritmo automata(90,11,6) · grados 5 · vel 0.42
+voz t7 piano · tiempo compás 1/8 · ritmo automata(90,11,7) · grados 6 · vel 0.42
+voz t8 piano · tiempo compás 1/8 · ritmo automata(90,11,8) · grados 7 · vel 0.42
+voz t9 piano · tiempo compás 1/8 · ritmo automata(90,11,9) · grados 8 · vel 0.42
+voz t10 piano · tiempo compás 1/8 · ritmo automata(90,11,10) · grados 9 · vel 0.42
+voz t11 piano · tiempo compás 1/8 · ritmo automata(90,11,11) · grados 10 · vel 0.42
+` },
+{ nombre: "Hoquetus de Thue-Morse", grupo: "Piano", texto: `# Hoquetus de Thue-Morse
+# En el hoquetus medieval dos voces se reparten los golpes de una línea.
+# Aquí cada semicorchea la toca la mano que indica la secuencia de
+# Thue-Morse: nunca hay un hueco ni dos manos a la vez. Es el reparto
+# justo de Prouhet (1851): en cada bloque de 2^k semicorcheas, las
+# posiciones de una mano y las de la otra tienen la misma suma, la misma
+# suma de cuadrados… hasta la potencia k−1. Y ningún bloque se repite tres
+# veces seguidas. Cada mano canta la serie de Nørgård.
+tempo 84 · semilla 13
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/16
+  ritmo thue invertir
+  grados norgard suma 7
+  octava 1
+  vel 0.55
+voz derecha piano
+  tiempo compás 1/16
+  ritmo thue
+  grados norgard suma 4
+  octava 2
+  vel 0.6
+` },
+{ nombre: "Tres trayectorias", grupo: "Piano", texto: `# Tres trayectorias
+# Conjetura de Collatz (1937, sin demostrar): si el número es par se divide
+# entre 2; si es impar, se multiplica por 3 y se suma 1. Desde cualquier
+# número se llegaría siempre a 4, 2, 1. Tres voces parten de 7, 27 y 97:
+# frases de 17, 112 y 119 notas que suben hasta 52, 9232 y 9232 antes de
+# caer en la misma cadencia 4, 2, 1, que aquí son los grados 4, 2 y 1.
+# Cada voz repite su frase entera.
+tempo 120 · semilla 14
+afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
+base 55
+compás 4/4
+duración 32
+
+voz siete piano
+  tiempo compás 1/8
+  grados collatz(7) mod 7
+  octava 3
+  vel 0.5
+voz veintisiete piano
+  tiempo compás 1/8
+  grados collatz(27) mod 7
+  octava 2
+  vel 0.6
+voz noventaysiete piano
+  tiempo compás 1/4
+  grados collatz(97) mod 7
+  octava 1
+  pedal compás
+  vel 0.5
+` },
+{ nombre: "Árbol de Stern", grupo: "Piano", texto: `# Árbol de Stern
+# La serie diatómica de Moritz Stern (1858), 0 1 1 2 1 3 2 3 1 4 3 5…,
+# tiene una propiedad única: los cocientes entre términos vecinos recorren
+# todas las fracciones positivas, cada una una sola vez y ya simplificada
+# (Calkin y Wilf, 2000). La afinación son las 12 razones más simples que
+# aparecen así; la melodía lee la serie módulo 12 y sus duraciones, la
+# misma serie módulo 3. El bajo la toca una nota por compás.
+tempo 76 · semilla 15
+afinación stern 12
+base 65.41
+compás 4/4
+duración 24
+
+voz melodia piano
+  tiempo compás 1/16
+  ritmo duraciones stern mod 3 suma 1
+  grados stern mod 12
+  octava 2
+  pedal compás
+  vel 0.6
+voz bajo piano
+  tiempo divide 1
+  grados stern mod 12
+  vel 0.5
+` },
+{ nombre: "Crecimiento áureo", grupo: "Piano", texto: `# Crecimiento áureo
+# Los compases crecen como Fibonacci: 2, 3, 5, 8 y 13 corcheas, y vuelven a
+# empezar. La escala apila 13 veces la razón áurea φ y la baja a una
+# octava. El teorema de las tres distancias dice que una escala así tiene
+# como mucho tres tamaños de paso; con 13 notas tiene solo dos, de 99 y
+# 69 cents. Las manos reparten 2 y 3 golpes por compás con ritmos
+# euclidianos, y las alturas leen Fibonacci módulo 13.
+tempo 112 · semilla 16
+afinación generador phi 13
+base 55
+compás 2/8 3/8 5/8 8/8 13/8
+duración 25
+
+voz izquierda piano
+  ritmo euclides(2)
+  grados fib mod 13
+  octava 1
+  vel 0.55
+voz derecha piano
+  ritmo euclides(3)
+  grados fib mod 13 suma 3
+  octava 2
+  vel 0.6
+voz grave piano
+  tiempo divide 1
+  grados 0 0 8 5 0
+  pedal compás
+  vel 0.45
+` },
+{ nombre: "Períodos de Pisano", grupo: "Piano", texto: `# Períodos de Pisano
+# Fibonacci reducida módulo n siempre se vuelve periódica, algo que
+# Lagrange ya había notado en el siglo XVIII: módulo 5 se repite cada 20
+# notas, módulo 7 cada 16 y módulo 8 cada 12. Tres voces leen esas tres
+# versiones al mismo ritmo y solo vuelven a coincidir cada
+# mcm(20, 16, 12) = 240 notas: los 30 compases de la pieza.
+tempo 120 · semilla 17
+afinación razones 1/1 9/8 5/4 4/3 3/2 5/3 15/8
+base 65.41
+compás 4/4
+duración 30
+
+voz cinco piano
+  tiempo compás 1/8
+  grados fib mod 5
+  octava 1
+  vel 0.5
+voz siete piano
+  tiempo compás 1/8
+  grados fib mod 7
+  octava 2
+  vel 0.55
+voz ocho piano
+  tiempo compás 1/8
+  grados fib mod 8
+  octava 3
+  vel 0.45
+` },
+{ nombre: "Mira y di", grupo: "Piano", texto: `# Mira y di
+# Cada término de la secuencia de Conway describe en voz alta el anterior:
+# 1, «un uno» 11, «dos unos» 21, 1211, 111221… y solo usa los dígitos
+# 1, 2 y 3. Aquí cada dígito da a la vez la nota y la duración: la escala
+# tiene tres notas (la tríada mayor justa 4:5:6) y cada dígito dura 1, 2
+# o 3 pasos. La izquierda la toca en corcheas; la derecha, la misma en
+# semicorcheas y dos octavas arriba: un canon por disminución.
+tempo 88 · semilla 18
+afinación razones 1/1 5/4 3/2
+base 110
+compás 4/4
+duración 24
+
+voz izquierda piano
+  tiempo compás 1/8
+  ritmo duraciones conway
+  grados conway suma -1
+  octava 1
+  vel 0.55
+voz derecha piano
+  tiempo compás 1/16
+  ritmo duraciones conway
+  grados conway suma -1
+  octava 3
+  vel 0.5
+` },
+{ nombre: "Regla 110", grupo: "Piano", texto: `# Regla 110
+# Un autómata celular de una sola regla local que Matthew Cook demostró
+# Turing-completo (2004): con la condición inicial adecuada puede hacer
+# cualquier cálculo. A diferencia de la regla 90 no es simétrica: crece
+# solo hacia la izquierda, que aquí son las teclas graves. En un anillo de
+# 11 celdas, tras 13 generaciones de transición entra en un ciclo de 110.
+# Cada columna es una tecla, como en un rollo de pianola, sobre la escala
+# de tonos enteros.
+tempo 66 · semilla 19
+afinación edo 6
+base 130.81                    # do3
+compás 4/4
+duración 24
+
+voz t1 piano · tiempo compás 1/8 · ritmo automata(110,11,1) · grados 0 · vel 0.45
+voz t2 piano · tiempo compás 1/8 · ritmo automata(110,11,2) · grados 1 · vel 0.45
+voz t3 piano · tiempo compás 1/8 · ritmo automata(110,11,3) · grados 2 · vel 0.45
+voz t4 piano · tiempo compás 1/8 · ritmo automata(110,11,4) · grados 3 · vel 0.45
+voz t5 piano · tiempo compás 1/8 · ritmo automata(110,11,5) · grados 4 · vel 0.45
+voz t6 piano · tiempo compás 1/8 · ritmo automata(110,11,6) · grados 5 · vel 0.45
+voz t7 piano · tiempo compás 1/8 · ritmo automata(110,11,7) · grados 6 · vel 0.45
+voz t8 piano · tiempo compás 1/8 · ritmo automata(110,11,8) · grados 7 · vel 0.45
+voz t9 piano · tiempo compás 1/8 · ritmo automata(110,11,9) · grados 8 · vel 0.45
+voz t10 piano · tiempo compás 1/8 · ritmo automata(110,11,10) · grados 9 · vel 0.45
+voz t11 piano · tiempo compás 1/8 · ritmo automata(110,11,11) · grados 10 · vel 0.45
+` },
+{ nombre: "No retrogradables", grupo: "Piano", texto: `# No retrogradables
+# Olivier Messiaen llamó «ritmos no retrogradables» a los palíndromos
+# rítmicos: leídos al revés son idénticos (escribir «retrógrado» después
+# no los cambia). Tres voces repiten palíndromos de 9, 11 y 13
+# semicorcheas, con alturas también palindrómicas, sobre un pulso de
+# negras. Las cuatro capas recién vuelven a coincidir tras
+# 9 × 11 × 13 × 16 = 20 592 semicorcheas, casi una hora. La escala es su
+# tercer modo de transposición limitada.
+tempo 90 · semilla 20
+afinación cents 0 200 300 400 600 700 800 1000 1100
+base 65.41
+compás 4/4
+duración 32
+
+voz nueve piano
+  tiempo bucle 9/16
+  ritmo x..x.x..x
+  grados 0 4 4 0
+  octava 2
+  vel 0.55
+voz once piano
+  tiempo bucle 11/16
+  ritmo x.x..x..x.x
+  grados 7 5 2 5 7
+  octava 2
+  vel 0.5
+voz trece piano
+  tiempo bucle 13/16
+  ritmo x...x.x.x...x
+  grados 0 8 3 8 0
+  octava 1
+  vel 0.55
+voz pulso piano
+  ritmo x
+  tiempo compás 1/4
+  grados 0
+  pedal compás
+  vel 0.4
+` },
+{ nombre: "987 · Fibonacci", grupo: "Sintetizadores", texto: `# 987 · Fibonacci en la métrica
 # Los compases recorren 9/8, 8/8 y 7/8: 9-8-7 forma 987,
 # término 16 de la serie. El bajo lee Fibonacci módulo 7
 # sobre una escala pitagórica de 7 quintas (modo lidio).
@@ -1684,7 +2248,7 @@ voz colchon pad
   largo 1.1
   entra 13
 ` },
-{ nombre: 'Cuartos de tono', texto: `# Cuartos de tono
+{ nombre: "Cuartos de tono", grupo: "Sintetizadores", texto: `# Cuartos de tono
 # 24 divisiones iguales de la octava: el grado 1 es un cuarto de tono.
 # Forma aditiva: cada voz entra en su compás y algunas se retiran.
 tempo 112 · semilla 11
@@ -1722,7 +2286,7 @@ voz tom
   octava 2
   entra 21 · sale 29
 ` },
-{ nombre: 'Polimetría justa', texto: `# Polimetría justa
+{ nombre: "Polimetría justa", grupo: "Sintetizadores", texto: `# Polimetría justa
 # Bucles de 5, 7 y 9 semicorcheas sobre un pulso de 4/4.
 # Vuelven a coincidir cada 315 semicorcheas (mcm de 5, 7 y 9).
 # Afinación justa con la séptima armónica 7/4.
@@ -1763,7 +2327,7 @@ voz tic
   prob 0.6
   vol 0.2
 ` },
-{ nombre: 'Autoescritura', texto: `# Autoescritura
+{ nombre: "Autoescritura", grupo: "Sintetizadores", texto: `# Autoescritura
 # Secuencias que se describen a sí mismas.
 # Kolakoski es igual a la lista de sus rachas: da las duraciones del bajo.
 # Nørgård es autosimilar: cada cuatro notas reaparece la melodía entera.
@@ -1798,7 +2362,7 @@ voz cuerda
   brillo 0.7
   entra 9 · sale 29
 ` },
-{ nombre: 'Autómatas', texto: `# Autómatas
+{ nombre: "Autómatas", grupo: "Sintetizadores", texto: `# Autómatas
 # Tres voces leen columnas de la misma regla 90 (el triángulo de
 # Sierpinski en un anillo de 17 celdas): comparten la rejilla.
 # Otra lee las filas de la regla 30, que es caótica.
@@ -1837,7 +2401,7 @@ voz bajo
   grados 0 0 4 3
   entra 13
 ` },
-{ nombre: 'Del orden al caos', texto: `# Del orden al caos
+{ nombre: "Del orden al caos", grupo: "Sintetizadores", texto: `# Del orden al caos
 # El mapa logístico x → r·x·(1−x) con r subiendo hasta 4:
 # primero un valor fijo, luego ciclos de 2, 4 y 8, al final caos.
 # Recamán y Collatz dan saltos que van y vuelven.
@@ -1873,7 +2437,7 @@ voz tom
   octava 1
   entra 17 · sale 37
 ` },
-{ nombre: 'Neón', texto: `# Neón
+{ nombre: "Neón", grupo: "Sintetizadores", texto: `# Neón
 # Pads de filtro lento con vibrato tardío y campanas FM en una sala oscura.
 # Los acordes siguen la serie de Nørgård; las campanas, la palabra de
 # Fibonacci. El bajo entra a mitad de la pieza, saturado.
@@ -1919,38 +2483,7 @@ voz bombo
   ritmo x...
   entra 9 · sale 21
 ` },
-{ nombre: 'Nocturno', texto: `# Nocturno
-# Piano de cola en afinación justa (modo eólico).
-# Mano izquierda: duraciones de Kolakoski sobre un arpegio fijo, con el
-# pedal renovado en cada compás. Mano derecha: la serie de Nørgård sobre la
-# palabra de Fibonacci, que reparte los golpes sin repetirse nunca.
-tempo 66 · semilla 8
-afinación razones 1/1 9/8 6/5 4/3 3/2 8/5 9/5
-base 55
-compás 3/4 3/4 2/4
-duración 24
-
-voz izquierda piano
-  tiempo compás 1/8
-  ritmo duraciones kolakoski
-  grados 0 4 7 9 7 4
-  pedal compás
-  vel 0.5
-voz derecha piano
-  tiempo compás 1/16
-  ritmo palabrafib
-  grados norgard suma 14
-  pedal compás
-  vel 0.7
-  entra 3
-voz grave piano
-  tiempo divide 1
-  grados 0 0 -2 -3
-  largo 0.9
-  vel 0.5
-  entra 9 · sale 21
-` },
-{ nombre: 'Plantilla', texto: `# Plantilla
+{ nombre: "Plantilla", grupo: "Plantilla", texto: `# Plantilla
 tempo 120
 compás 4/4
 afinación edo 12
@@ -2477,10 +3010,18 @@ function cargarTexto(texto, origen) {
 
 /* ---------- eventos ---------- */
 function iniciar() {
+  const grupos = new Map();
   EJEMPLOS.forEach((e, i) => {
     const o = document.createElement('option');
     o.value = String(i); o.textContent = e.nombre;
-    ui.ejemplos.append(o);
+    if (!e.grupo) { ui.ejemplos.append(o); return; }
+    if (!grupos.has(e.grupo)) {
+      const g = document.createElement('optgroup');
+      g.label = e.grupo;
+      grupos.set(e.grupo, g);
+      ui.ejemplos.append(g);
+    }
+    grupos.get(e.grupo).append(o);
   });
   ui.titulo.addEventListener('click', () => location.reload());
   ui.tocar.addEventListener('click', tocar);

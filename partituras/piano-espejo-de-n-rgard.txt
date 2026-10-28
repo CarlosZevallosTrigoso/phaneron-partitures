@@ -1,0 +1,23 @@
+# Espejo de Nørgård
+# La serie infinita de Per Nørgård cumple a(2n) = −a(n). Si una voz la toca
+# en corcheas y otra en semicorcheas, cada vez que coinciden, la rápida
+# toca la inversión exacta de la lenta. En modo dórico, que es simétrico
+# (tono, semitono, tono, tono, tono, semitono, tono), el espejo es exacto
+# también en los intervalos.
+# Homenaje: la serie es de Per Nørgård, que la desarrolló a fines de los
+# años sesenta como base de su música.
+tempo 76 · semilla 2
+afinación cents 0 200 300 500 700 900 1000    # dórico temperado
+base 73.42                                    # re2
+compás 4/4
+duración 24
+
+voz lenta piano
+  tiempo compás 1/8
+  grados norgard suma 14
+  octava -1
+  vel 0.6
+voz rapida piano
+  tiempo compás 1/16
+  grados norgard suma 14
+  vel 0.45

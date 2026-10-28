@@ -1,0 +1,23 @@
+# Otonalidad
+# Harry Partch llamó «otonalidad» a la armonía de la serie armónica. Los
+# armónicos 8 a 15 de una nota, bajados a una octava, forman una escala de
+# ocho notas, 8:9:10:11:12:13:14:15, con el undécimo y el decimotercer
+# armónico, que no existen en el piano temperado. La melodía lee la serie
+# de Stern; el bajo toca los armónicos 1, 2 y 3 de la fundamental.
+tempo 92 · semilla 9
+afinación razones 1/1 9/8 5/4 11/8 3/2 13/8 7/4 15/8
+base 55
+compás 4/4
+duración 24
+
+voz melodia piano
+  tiempo compás 1/16
+  ritmo euclides(5,12)
+  grados stern mod 8
+  octava 2
+  vel 0.6
+voz armonicos piano
+  tiempo divide 3
+  grados 0 8 12
+  pedal compás
+  vel 0.5
