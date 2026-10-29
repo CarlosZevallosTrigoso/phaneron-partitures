@@ -37,7 +37,7 @@ El botón «Todo piano» escribe `instrumento piano` al comienzo de la partitura
 
 ## Ejemplos
 
-Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 3 para leer, 3 de ruido (blanco, rosa y marrón), 1 sobre un concepto teórico, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla. Las piezas para leer no están demostradas como óptimas: aplican el principio, con respaldo en la investigación sobre sonido irrelevante, de que lo que distrae al leer es el cambio impredecible.
+Las partituras de ejemplo se escribieron para esta aplicación a partir de reglas matemáticas; ninguna transcribe ni adapta una obra existente. Cada una explica en sus comentarios la idea que la organiza. Hay 21 para piano, 3 para leer, 3 de ruido (blanco, rosa y marrón), 2 sobre conceptos teóricos, 4 a-significantes (también para piano), 7 para los sintetizadores y una plantilla. Las piezas para leer no están demostradas como óptimas: aplican el principio, con respaldo en la investigación sobre sonido irrelevante, de que lo que distrae al leer es el cambio impredecible.
 
 ## Fuentes y homenajes
 
@@ -52,6 +52,7 @@ Algunas piezas toman ideas o procedimientos de otros, y lo dicen en sus comentar
 - Los ritmos euclidianos siguen el análisis de Godfried Toussaint sobre ritmos tradicionales.
 - Las herramientas a-significantes retoman ideas conocidas: los procesos de Poisson de la música estocástica de Iannis Xenakis; la escala alfa de Wendy Carlos; la escala de Heinz Bohlen y John Pierce; el puntillismo de Anton Webern; la dinámica independiente de Messiaen (*Mode de valeurs et d'intensités*); el principio dodecafónico de no repetir antes de agotar las alturas. El modelo de oyente sigue la teoría de la expectativa de David Huron y el modelo IDyOM de Marcus Pearce. La observación de que el rechazo sistemático y el azar convergen recuerda el análisis de György Ligeti sobre *Structures Ia* de Boulez. El término «a-significante» es de Félix Guattari.
 - «Cuerpo sin órganos» parte de la expresión de Antonin Artaud (*Para terminar con el juicio de dios*, 1947) y del concepto que Gilles Deleuze y Félix Guattari hicieron con ella en *El Anti-Edipo* (1972) y en *Mil mesetas* (1980). La pieza traduce a decisiones de escritura la diferencia entre órganos y organismo, la desestratificación, el grado cero de intensidad y la advertencia de prudencia de la meseta.
+- «Caosmosis», versión larga de «Neón» (35 minutos), parte del concepto de Félix Guattari en *Caosmosis* (1992), que toma la palabra *chaosmos* de James Joyce. Su forma sigue el mapa logístico (Robert May, 1976) a través de la cascada de duplicaciones de período y el punto de Feigenbaum hasta el caos, la ventana de período 3 y la intermitencia de Pomeau y Manneville.
 - Las series y teoremas citados (Fibonacci, Pisano, Dirichlet, Stern, Calkin-Wilf, Thue-Morse, Prouhet, Kolakoski, Conway, Collatz, Recamán, Lucas, Wolfram, Cook, Li-Yorke, Lorenz) son de dominio matemático.
 
 ## Créditos

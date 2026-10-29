@@ -1164,7 +1164,19 @@ function crearLinea(p) {
  * avanzarHasta(tFin) devuelve los golpes con t < tFin y deja el cursor ahí.
  * Los grados se cuentan por golpe desde la creación del cursor.
  */
+/**
+ * Cursor de una voz que empieza en el compás c0. Las series, el azar de las
+ * fuerzas y el oyente dependen de todo lo que la voz tocó antes, así que el
+ * cursor siempre arranca en el compás 0 y avanza sin emitir hasta c0: empezar
+ * a mitad de la pieza da exactamente las mismas notas que tocarla entera.
+ */
 function crearCursor(p, linea, vi, c0) {
+  const cur = cursorDesdeInicio(p, linea, vi);
+  if (c0 > 0) cur.avanzarHasta(linea.inicio(c0), 1e9);   // sin el tope de vueltas: siempre avanza
+  return cur;
+}
+function cursorDesdeInicio(p, linea, vi) {
+  const c0 = 0;
   const voz = p.voces[vi];
   const T = voz.tiempo;
   const P = linea.P;
@@ -1256,9 +1268,9 @@ function crearCursor(p, linea, vi, c0) {
   };
   const activa = c => (!voz.entra || c >= voz.entra - 1) && (!voz.sale || c < voz.sale - 1);
 
-  function avanzarHasta(tFin) {
+  function avanzarHasta(tFin, tope = 200000) {
     const out = [];
-    for (let guarda = 0; guarda < 200000; guarda++) {
+    for (let guarda = 0; guarda < tope; guarda++) {
       let t, dur, c, g, nMarco, pMarco;
       if (libre) {
         t = tLibre; dur = gapSig;
@@ -2800,6 +2812,179 @@ voz aurora piano
   octava 2
   vel 0.35
   entra 29
+` },
+{ nombre: "Caosmosis", grupo: "Conceptos", texto: `# Caosmosis
+# Versión larga de «Neón», 35 minutos, sobre el concepto de Félix Guattari.
+# En «Caosmosis» (1992), su último libro, el caos no es desorden: es un caos
+# determinista animado por velocidades infinitas, del que se desprenden
+# composiciones complejas cuando se ralentizan. Los ritornelos cristalizan
+# territorios existenciales, que siguen habitados por el caos y vuelven a él;
+# lo que se recompone después no es lo mismo (heterogénesis). La palabra viene
+# del «chaosmos» de Joyce.
+#
+# El mapa logístico x → r·x·(1−x) es el caso de manual de caos determinista,
+# y su parámetro r hace de forma de la pieza:
+#   r < 3          un punto fijo: una sola nota, el primer ritornelo
+#   r = 3          el punto se duplica: dos notas que alternan
+#   r ≈ 3.449      cuatro notas; en 3.544, ocho; luego 16, 32…
+#   r ≈ 3.5699     el borde del caos (punto de Feigenbaum): complejidad sin caos
+#   r > 3.57       caos, con ventanas de orden; la mayor, de período 3, abre en 3.8284
+#   justo antes de esa ventana hay intermitencia: el ciclo de tres notas se
+#   forma y se deshace una y otra vez
+#
+# Forma, en minutos:
+# 0–11   velocidad infinita: un polvo de campanas que sigue el mapa en caos
+#        pleno (r = 4) a 14 notas por segundo y se ralentiza hasta 1,2.
+# 3–19   ralentización: una cuerda sigue el mapa con r creciente: una nota,
+#        dos, cuatro, ocho, hasta el borde, donde el ciclo llega a 32 corcheas
+#        (4 compases, como el ritornelo del pad grave) y sigue alargándose sin
+#        volverse caos.
+# 6–29   territorio: el mundo de Neón se arma sobre esos ritornelos (pad grave,
+#        campanas, pads de Nørgård y, entre los minutos 13 y 19, bajo y bombo).
+# 17–27  caosmosis: otra cuerda, una octava abajo, parte del mismo borde y cae
+#        al caos (r de 3.5699 a 4) mientras el territorio se deshace. Las dos
+#        cuerdas empiezan en la misma órbita, a una octava, y se separan a los
+#        pocos compases. Hacia el minuto 23 la caída cruza la ventana de
+#        período 3: medio minuto de orden dentro del caos. El polvo vuelve a
+#        acelerar hasta 9 notas por segundo.
+# 25–35  heterogénesis: el polvo se ralentiza otra vez y unas campanas se
+#        acercan a la ventana de período 3 desde abajo; el ciclo fa, re, do
+#        aparece y se rompe cada vez menos hasta fijarse, cerca del minuto 33.
+#        No vuelve el territorio de Neón: el nuevo suelo es fa,
+#        no re, y el ciclo de tres va a contratiempo del compás de cuatro.
+tempo 72 · semilla 12
+afinación razones 1/1 16/15 6/5 4/3 3/2 8/5 9/5    # frigio justo
+base 36.7                                         # re grave
+compás 4/4
+duración 630
+
+# velocidad infinita
+voz polvo metal
+  tiempo libre 14 1.2 3500
+  grados logistico(4) mod 28
+  octava 2
+  vel azar 0.3 0.7
+  decae 0.3
+  brillo 0.2
+  vol 0.42
+  espacio 0.7
+  sale 613
+
+# ralentización: la órbita atraviesa las duplicaciones de período
+voz punto cuerda
+  tiempo compás 1/8
+  grados logistico(2.95, 3.4, 432) mod 14
+  octava 2
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan -0.25 · espacio 0.35
+  entra 55 · sale 109
+voz dos cuerda
+  tiempo compás 1/8
+  grados logistico(3.4, 3.52, 432) mod 14
+  octava 2
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan -0.25 · espacio 0.35
+  entra 109 · sale 163
+voz cuatro cuerda
+  tiempo compás 1/8
+  grados logistico(3.52, 3.56, 432) mod 14
+  octava 2
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan -0.25 · espacio 0.35
+  entra 163 · sale 217
+voz ocho cuerda
+  tiempo compás 1/8
+  grados logistico(3.56, 3.5699, 576) mod 14
+  octava 2
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan -0.25 · espacio 0.35
+  entra 217 · sale 289
+voz borde cuerda
+  tiempo compás 1/8
+  grados logistico(3.5699) mod 14
+  octava 2
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan -0.25 · espacio 0.35
+  entra 289 · sale 343
+
+# territorio: Neón
+voz grave pad
+  tiempo divide 1
+  grados 0 0 5 3
+  octava 1
+  largo 1.1
+  entra 109 · sale 469
+voz campanas metal
+  tiempo compás 1/16
+  ritmo palabrafib
+  prob 0.35
+  grados conway suma 7
+  octava 2
+  entra 127 · sale 523
+voz medio pad
+  tiempo divide 1
+  grados norgard suma 4
+  octava 2
+  largo 1.1
+  vol 0.32
+  entra 163 · sale 433
+voz alto pad
+  tiempo divide 2
+  grados norgard suma 9
+  octava 2
+  largo 2.2
+  vol 0.24
+  entra 167 · sale 397
+voz bajo
+  tiempo compás 1/8
+  ritmo duraciones kolakoski
+  grados 0 0 0 5
+  octava 1
+  distorsión 0.6
+  vol 0.2
+  entra 235 · sale 343
+voz bombo
+  ritmo x...
+  vol 0.45
+  entra 235 · sale 343
+
+# caosmosis: del borde al caos
+voz caida cuerda
+  tiempo compás 1/8
+  grados logistico(3.5699, 4, 1440) mod 14
+  octava 1
+  vol 0.5 · decae 1.4 · brillo 0.35 · pan 0.25 · espacio 0.35
+  entra 307 · sale 487
+voz polvo2 metal
+  tiempo libre 1.2 9 1850
+  grados logistico(3.98) mod 28
+  octava 2
+  vel azar 0.3 0.7
+  decae 0.3
+  brillo 0.2
+  vol 0.26
+  espacio 0.7
+  entra 343 · sale 487
+
+# heterogénesis: una segunda ralentización y la ventana de período 3
+voz polvo3 metal
+  tiempo libre 9 0.6 1100
+  grados logistico(3.97) mod 28
+  octava 2
+  vel azar 0.3 0.7
+  decae 0.3
+  brillo 0.2
+  vol 0.26
+  espacio 0.7
+  entra 487 · sale 595
+voz ventana metal
+  tiempo compás 1/4
+  grados logistico(3.822, 3.83, 720) mod 14
+  octava 2
+  decae 2.4 · brillo 0.3 · vol 0.32 · espacio 0.5
+  entra 451
+voz suelo pad
+  tiempo divide 1
+  grados 2
+  octava 1
+  largo 1.1
+  vol 0.3
+  entra 577
 ` },
 { nombre: "Tres grados de expectativa", grupo: "A-significantes", texto: `# Tres grados de expectativa
 # Tres voces eligen sus notas con el mismo generador y el mismo ritmo; solo
