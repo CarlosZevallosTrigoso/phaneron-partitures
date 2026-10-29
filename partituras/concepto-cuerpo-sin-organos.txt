@@ -1,0 +1,85 @@
+# Cuerpo sin órganos
+# Antonin Artaud acuñó la expresión en 1947, en «Para terminar con el juicio
+# de dios», y Deleuze y Guattari la volvieron concepto en «El Anti-Edipo»
+# (1972) y en la meseta «28 de noviembre de 1947: ¿cómo hacerse un cuerpo
+# sin órganos?» de «Mil mesetas» (1980). El cuerpo sin órganos no se opone a
+# los órganos sino al organismo: a la organización que los jerarquiza y les
+# asigna funciones. No es una forma sino una superficie recorrida por
+# intensidades, que parten de un grado cero.
+#
+# Traducción al piano, en cuatro tramos:
+# 1. Organismo (compases 1 a 8). Cada voz es un órgano con una función: un
+#    bajo que fundamenta, un acompañamiento de Alberti que rellena, una
+#    melodía que conduce. Compás, tonalidad y apagadores: cada tecla gobierna
+#    su cuerda. La afinación tiene 24 partes, pero el organismo solo usa las
+#    12 pares: el temperamento también es un estrato.
+# 2. Desestratificación (9 a 16). Las funciones se desatan una por una. Entra
+#    una voz con el pedal abajo: sin apagadores, el piano se vuelve una sola
+#    superficie donde todo queda inscrito, y esa voz recorre las 24 partes,
+#    cuartos de tono incluidos. Se retira el bajo; entra un flujo sin pulso.
+# 3. Cuerpo lleno (17 a 28). Solo intensidades: un ruido marrón como grado
+#    cero (el huevo) y dos flujos que se cruzan, uno cada vez más denso y otro
+#    cada vez más ralo, en registros esparcidos y con fuerzas sin jerarquía.
+# 4. Aurora (29 a 32). La meseta pide prudencia: no desestratificar a golpes,
+#    sino conservar algo de organismo para que se recomponga cada mañana.
+#    Vuelven tres notas de la melodía, solas.
+tempo 60 · semilla 47
+afinación edo 24
+base 65.41                     # do2
+compás 4/4
+duración 32
+
+# 1 · organismo
+voz fundamento piano
+  tiempo divide 1
+  grados 0 14 18 10              # do, sol, la, fa
+  vel 0.55
+  sale 11
+voz alberti piano
+  tiempo compás 1/8
+  grados 0 14 8 14 0 14 8 14 14 28 22 28 14 28 22 28 18 32 24 32 18 32 24 32 10 24 18 24 10 24 18 24
+  octava 1
+  vel 0.45
+  sale 17
+voz melodia piano
+  grados 8 4 0 4 4 -2 4 14 24 18 14 18 18 14 10 8
+  octava 2
+  vel 0.6
+  sale 15
+
+# 2 · desestratificación
+voz superficie piano
+  grados permutaciones(24)
+  octava 2
+  pedal
+  vel 0.4
+  entra 9 · sale 25
+voz flujo piano
+  tiempo libre 1 8 200
+  grados expectativa(0.55) mod 48
+  dispersar 3
+  octava 1
+  vel azar 0.2 0.8
+  entra 13 · sale 29
+
+# 3 · cuerpo lleno
+voz huevo ruido
+  color marrón
+  tiempo divide 1
+  vol 0.35
+  entra 15 · sale 31
+voz reflujo piano
+  tiempo libre 8 0.5 120
+  grados permutaciones(48)
+  dispersar 2
+  octava 1
+  vel azar 0.2 0.8
+  entra 21 · sale 29
+
+# 4 · aurora
+voz aurora piano
+  ritmo xxx.
+  grados 8 4 0
+  octava 2
+  vel 0.35
+  entra 29
